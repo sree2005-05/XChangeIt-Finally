@@ -1,0 +1,229 @@
+/* ── HERO ── */
+.hero {
+  background: linear-gradient(160deg, #2c3e50 0%, #34495e 55%, #2c3e50 100%);
+  padding: 0 48px;
+  min-height: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hero-inner {
+  width: 100%;
+  max-width: 860px;
+  padding: 80px 0;
+}
+.hero-centered {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.hero-centered h1 {
+  font-family: 'IBM Plex Serif', serif;
+  font-size: 58px;
+  color: #fff;
+  line-height: 1.15;
+  font-weight: 600;
+  margin-bottom: 22px;
+}
+.hero-centered p {
+  color: rgba(255,255,255,0.55);
+  font-size: 17px;
+  line-height: 1.75;
+  max-width: 520px;
+  font-weight: 300;
+  margin-bottom: 36px;
+}
+.hero-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+
+/* ── HOW SECTION ── */
+.how-section {
+  padding: 80px 48px;
+  background: #fff;
+}
+.how-inner { max-width: 1100px; margin: 0 auto; }
+.how-header { margin-bottom: 48px; }
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+.step-card {
+  background: #f4f6f9;
+  border-radius: 6px;
+  padding: 28px 24px;
+  position: relative;
+  border-top: 3px solid #e5eaef;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.step-card:hover {
+  border-top-color: #e74c3c;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.07);
+}
+.step-num {
+  font-family: 'IBM Plex Serif', serif;
+  font-size: 13px;
+  color: #e74c3c;
+  font-weight: 600;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+.step-icon {
+  font-size: 28px;
+  margin-bottom: 16px;
+  display: block;
+}
+.step-card h3 {
+  font-family: 'IBM Plex Serif', serif;
+  font-size: 18px;
+  color: #2c3e50;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+.step-card p {
+  color: #7f8c8d;
+  font-size: 14px;
+  line-height: 1.65;
+  font-weight: 400;
+  margin-bottom: 16px;
+}
+.step-tag {
+  display: inline-block;
+  background: rgba(231,76,60,0.08);
+  color: #e74c3c;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 5px 10px;
+  border-radius: 2px;
+}
+
+/* ── TESTIMONIALS ── */
+.testimonials-section {
+  background: #f4f6f9;
+  padding: 80px 48px;
+}
+.test-inner { max-width: 1100px; margin: 0 auto; }
+.test-header { margin-bottom: 40px; }
+.reviews-track {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.review-card {
+  background: #fff;
+  border: 1px solid #e5eaef;
+  border-radius: 6px;
+  padding: 28px;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.review-card:hover {
+  box-shadow: 0 8px 24px rgba(44,62,80,0.1);
+  border-color: #2c3e50;
+}
+.review-top {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #f0f2f5;
+}
+.review-avatar {
+  width: 42px; height: 42px;
+  background: #2c3e50;
+  color: #fff;
+  font-weight: 700; font-size: 18px;
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.review-top h4 { font-size: 15px; color: #2c3e50; font-weight: 700; margin-bottom: 3px; }
+.review-year { color: #95a5a6; font-size: 12px; font-weight: 500; }
+.review-text {
+  color: #555e6d;
+  font-size: 14px;
+  line-height: 1.7;
+  font-style: italic;
+  font-family: 'IBM Plex Serif', serif;
+}
+
+/* ── FAQ ── */
+.faq-section {
+  background: #fff;
+  padding: 80px 48px;
+}
+.faq-inner { max-width: 780px; margin: 0 auto; }
+.faq-list { margin-top: 0; }
+.faq-item {
+  border-bottom: 1px solid #e5eaef;
+  overflow: hidden;
+}
+.faq-q {
+  padding: 20px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #2c3e50;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  letter-spacing: 0.2px;
+  user-select: none;
+}
+.faq-icon {
+  color: #e74c3c;
+  font-size: 13px;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+.faq-a {
+  max-height: 0;
+  overflow: hidden;
+  color: #7f8c8d;
+  font-size: 14px;
+  line-height: 1.7;
+  font-weight: 400;
+  transition: max-height 0.35s ease, padding 0.3s ease;
+}
+.faq-item.open .faq-a {
+  max-height: 200px;
+  padding-bottom: 20px;
+}
+.faq-item.open .faq-icon { transform: rotate(90deg); }
+
+/* ── FLOATING SELL BTN ── */
+.fab {
+  position: fixed;
+  bottom: 28px; right: 28px;
+  background: #e74c3c;
+  color: #fff;
+  padding: 14px 22px;
+  border-radius: 3px;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  box-shadow: 0 6px 20px rgba(231,76,60,0.4);
+  z-index: 999;
+  transition: opacity 0.2s;
+  font-family: 'Raleway', sans-serif;
+}
+.fab:hover { opacity: 0.88; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1000px) {
+  .steps-grid { grid-template-columns: repeat(2, 1fr); }
+  .reviews-track { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 768px) {
+  .hero { padding: 40px 20px; }
+  .hero-inner { flex-direction: column; gap: 36px; padding: 40px 0; }
+  .hero-left { padding-right: 0; border-right: none; }
+  .hero-left h1 { font-size: 38px; }
+  .hero-right { flex: unset; padding-left: 0; width: 100%; }
+  .stats-bar { flex-direction: column; padding: 20px; gap: 10px; }
+  .stat-item { border-right: none; border-bottom: 1px solid #e5eaef; }
+  .how-section, .testimonials-section, .faq-section { padding: 60px 20px; }
+  .steps-grid { grid-template-columns: 1fr; }
+  .reviews-track { grid-template-columns: 1fr; }
+}

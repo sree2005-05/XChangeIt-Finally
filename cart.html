@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Cart — XChangeIt</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='slate.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='cart.css') }}">
+</head>
+<body>
+{% with messages = get_flashed_messages() %}{% if messages %}<div class="flash-wrap">{% for msg in messages %}<div class="flash-msg">{{ msg }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+
+<div class="topbar">
+  <span>GEC Palakkad — Official Student Marketplace</span>
+  <div class="topbar-links"><a href="{{ url_for('explore') }}">← Continue Shopping</a></div>
+</div>
+
+<nav class="navbar">
+  <a href="{{ url_for('home') }}" class="logo">XChange<span>It</span></a>
+  <div class="nav-links">
+    <a href="{{ url_for('home') }}">Home</a>
+    <a href="{{ url_for('explore') }}">Explore</a>
+    <a href="{{ url_for('sell') }}">Sell / Rent</a>
+  </div>
+  <div class="nav-right">
+    {% if session.get('user') %}
+      <span class="nav-welcome">{{ session.get('user') }}</span>
+      <a href="{{ url_for('logout') }}" class="btn-nav-fill">Logout</a>
+    {% else %}
+      <a href="{{ url_for('login') }}" class="btn-nav-ghost">Login</a>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="overline">Shopping</span>
+    <h1>Your Cart</h1>
+    <p>Review your selected items before checking out.</p>
+  </div>
+</div>
+
+<div class="cart-section">
+  <div class="cart-inner">
+
+    {% if items %}
+    <div class="cart-layout">
+
+      <!-- ITEMS LIST -->
+      <div class="cart-items">
+        <div class="cart-items-header">
+          <span>Item</span>
+          <span>Price</span>
+        </div>
+        {% for item in items %}
+        <div class="cart-item">
+          <div class="cart-item-img">
+            {% if item['image1'] %}
+              <img src="{{ url_for('static', filename='uploads/' + item['image1']) }}" alt="{{ item['name'] }}">
+            {% else %}
+              <div class="cart-img-placeholder">📦</div>
+            {% endif %}
+          </div>
+          <div class="cart-item-info">
+            <h3>{{ item['name'] }}</h3>
+            <span class="cart-item-id">Product #{{ item['id'] }}</span>
+          </div>
+          <div class="cart-item-price">₹ {{ item['price'] }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- SUMMARY -->
+      <div class="cart-summary">
+        <div class="summary-title">Order Summary</div>
+        <div class="summary-row">
+          <span>Subtotal ({{ items|length }} item{% if items|length != 1 %}s{% endif %})</span>
+          <span>₹ {{ total }}</span>
+        </div>
+        <div class="summary-row">
+          <span>Platform Fee</span>
+          <span class="free-tag">Free</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-total">
+          <span>Total</span>
+          <span>₹ {{ total }}</span>
+        </div>
+        <a href="#" class="btn-red" style="display:block; text-align:center; margin-top:24px; padding:15px;">
+          Proceed to Checkout
+        </a>
+        <a href="{{ url_for('explore') }}" class="btn-continue">← Continue Shopping</a>
+        <div class="summary-trust">
+          <span>✓ Secure · Student-to-Student · Campus Only</span>
+        </div>
+      </div>
+
+    </div>
+
+    {% else %}
+    <div class="cart-empty">
+      <span class="empty-icon">🛒</span>
+      <h3>Your cart is empty</h3>
+      <p>Browse listings and add items you like.</p>
+      <a href="{{ url_for('explore') }}" class="btn-red" style="margin-top:24px;">Browse Listings</a>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-col"><span class="footer-logo">XChange<span>It</span></span><p class="footer-desc">Verified student marketplace for GEC Palakkad.</p></div>
+    <div class="footer-col"><h4>Navigation</h4><ul><li><a href="{{ url_for('home') }}">Home</a></li><li><a href="{{ url_for('explore') }}">Explore</a></li></ul></div>
+    <div class="footer-col"><h4>Account</h4><ul><li><a href="{{ url_for('login') }}">Login</a></li><li><a href="{{ url_for('sell') }}">Sell / Rent</a></li></ul></div>
+    <div class="footer-col"><h4>Contact</h4><p>support@xchangeit.in</p></div>
+  </div>
+  <div class="footer-bottom">© 2026 XChangeIt · GEC Palakkad</div>
+</footer>
+
+</body>
+</html>

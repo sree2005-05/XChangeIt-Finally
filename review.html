@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Review — XChangeIt</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='slate.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='review.css') }}">
+</head>
+<body>
+{% with messages = get_flashed_messages() %}{% if messages %}<div class="flash-wrap">{% for msg in messages %}<div class="flash-msg">{{ msg }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+<div class="topbar">
+  <span>GEC Palakkad — Official Student Marketplace</span>
+  <div class="topbar-links"><a href="{{ url_for('home') }}">← Back to Home</a></div>
+</div>
+<nav class="navbar">
+  <a href="{{ url_for('home') }}" class="logo">XChange<span>It</span></a>
+  <div class="nav-links">
+    <a href="{{ url_for('home') }}">Home</a>
+    <a href="{{ url_for('explore') }}">Explore</a>
+  </div>
+  <div class="nav-right">
+    {% if session.get('user') %}
+      <span class="nav-welcome">{{ session.get('user') }}</span>
+      <a href="{{ url_for('logout') }}" class="btn-nav-fill">Logout</a>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="review-page">
+  <div class="review-layout">
+
+    <div class="review-left">
+      <span class="overline">Community</span>
+      <h1>Share Your<br>Experience</h1>
+      <p>Your review helps fellow GEC Palakkad students make better decisions on XChangeIt.</p>
+      <div class="review-info-items">
+        <div class="review-info-item"><span class="ri-icon">✓</span><span>Reviews are displayed on the homepage</span></div>
+        <div class="review-info-item"><span class="ri-icon">✓</span><span>Your name will appear alongside your review</span></div>
+        <div class="review-info-item"><span class="ri-icon">✓</span><span>One genuine review per student</span></div>
+      </div>
+    </div>
+
+    <div class="review-right">
+      <div class="review-form-card">
+        <div class="review-form-title">Write Your Review</div>
+        <form method="POST" action="{{ url_for('add_review') }}" class="review-form">
+          <div class="form-group">
+            <label>Your Review</label>
+            <textarea name="message" rows="5" placeholder="Describe your experience with XChangeIt — what did you buy or sell? Was it smooth?" required></textarea>
+          </div>
+          <div class="form-group">
+            <label>Your Year</label>
+            <select name="year" required>
+              <option value="">Select your current year</option>
+              <option>1st Year</option>
+              <option>2nd Year</option>
+              <option>3rd Year</option>
+              <option>4th Year</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-red" style="width:100%; padding:15px;">Submit Review →</button>
+        </form>
+        <a href="{{ url_for('home') }}" class="review-back">← Back to Home</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

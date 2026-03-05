@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up — XChangeIt</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='slate.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+</head>
+<body class="auth-body">
+{% with messages = get_flashed_messages() %}{% if messages %}<div class="flash-wrap">{% for msg in messages %}<div class="flash-msg">{{ msg }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+<div class="auth-split">
+  <div class="auth-left">
+    <a href="{{ url_for('home') }}" class="auth-logo">XChange<span>It</span></a>
+    <div class="auth-left-content">
+      <h2>Join 1,200+ GEC Palakkad students already trading smarter.</h2>
+      <div class="auth-points">
+        <div class="auth-point"><span class="ap-icon">✓</span> Free to join and list</div>
+        <div class="auth-point"><span class="ap-icon">✓</span> Verified students only</div>
+        <div class="auth-point"><span class="ap-icon">✓</span> Safe campus exchange</div>
+        <div class="auth-point"><span class="ap-icon">✓</span> Buy, sell, or rent</div>
+      </div>
+    </div>
+    <p class="auth-left-footer">© 2026 XChangeIt · GEC Palakkad</p>
+  </div>
+  <div class="auth-right">
+    <div class="auth-form-wrap">
+      <div class="auth-form-header">
+        <span class="overline">Get Started</span>
+        <h1>Create Account</h1>
+        <p>Join the GEC Palakkad student marketplace</p>
+      </div>
+      <form method="POST" action="{{ url_for('signup') }}" class="auth-form">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" name="name" placeholder="Your full name" required>
+        </div>
+        <div class="form-group">
+          <label>University Email</label>
+          <input type="email" name="email" placeholder="yourname@gecskp.ac.in"
+                 pattern="^[a-zA-Z0-9._%+-]+@gecskp\.ac\.in$" required>
+          <span class="form-hint">Must be a @gecskp.ac.in email address</span>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" name="password" placeholder="Minimum 8 characters" minlength="8" required>
+        </div>
+        <button type="submit" class="btn-auth">Create Account →</button>
+      </form>
+      <div class="auth-switch">Already have an account? <a href="{{ url_for('login') }}">Sign in here</a></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

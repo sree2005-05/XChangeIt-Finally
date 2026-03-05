@@ -1,0 +1,69 @@
+.page-header { background:#2c3e50; padding:40px 48px 36px; border-bottom:3px solid #e74c3c; }
+.page-header-inner { max-width:1100px; margin:0 auto; }
+.page-header h1 { font-family:'IBM Plex Serif',serif; font-size:36px; color:#fff; font-weight:600; margin-bottom:8px; }
+.page-header p { color:rgba(255,255,255,0.5); font-size:15px; font-weight:300; }
+
+.sell-section { padding:48px 48px 80px; }
+.sell-layout { max-width:1100px; margin:0 auto; display:grid; grid-template-columns:1fr 300px; gap:32px; align-items:start; }
+
+.sell-form-wrap { background:#fff; border:1px solid #e5eaef; border-radius:6px; overflow:hidden; }
+.sell-form { padding:36px; display:flex; flex-direction:column; gap:0; }
+
+.form-section { padding-bottom:32px; margin-bottom:32px; border-bottom:1px solid #f0f2f5; }
+.form-section:last-of-type { border-bottom:none; margin-bottom:24px; }
+.form-section-title { font-family:'IBM Plex Serif',serif; font-size:18px; color:#2c3e50; font-weight:600; margin-bottom:24px; }
+.optional-tag { font-family:'Raleway',sans-serif; font-size:12px; color:#95a5a6; font-weight:500; margin-left:8px; }
+
+.form-group { display:flex; flex-direction:column; gap:7px; margin-bottom:20px; }
+.form-group:last-child { margin-bottom:0; }
+.form-group label { font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:#2c3e50; }
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group textarea {
+  padding:12px 16px; border:1.5px solid #dde2e8; border-radius:3px;
+  font-size:14px; font-family:'Raleway',sans-serif; color:#2c3e50;
+  background:#fff; transition:border-color 0.2s; outline:none; resize:vertical;
+}
+.form-group input:focus, .form-group textarea:focus { border-color:#2c3e50; }
+.form-group input::placeholder, .form-group textarea::placeholder { color:#bdc3c7; }
+
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.radio-row { display:flex; gap:12px; padding-top:4px; }
+.radio-option {
+  flex:1; display:flex; align-items:center; justify-content:center; gap:8px;
+  padding:12px; border:1.5px solid #dde2e8; border-radius:3px;
+  cursor:pointer; font-size:13px; font-weight:700; color:#7f8c8d; transition:all 0.2s;
+}
+.radio-option input[type="radio"] { display:none; }
+.radio-option:has(input:checked) { border-color:#e74c3c; background:rgba(231,76,60,0.05); color:#e74c3c; }
+
+.upload-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
+.upload-slot {
+  aspect-ratio:1; background:#f4f6f9; border:1.5px dashed #dde2e8;
+  border-radius:4px; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:6px; cursor:pointer; transition:all 0.2s; font-size:11px; color:#bdc3c7; font-weight:600;
+}
+.upload-slot:hover { border-color:#2c3e50; background:#fff; color:#2c3e50; }
+.upload-slot input[type="file"] { display:none; }
+.upload-slot span:first-of-type { font-size:22px; }
+
+.sell-sidebar { display:flex; flex-direction:column; gap:16px; }
+.sell-tip-box { background:#fff; border:1px solid #e5eaef; border-radius:6px; padding:24px; }
+.tip-title { font-family:'IBM Plex Serif',serif; font-size:16px; color:#2c3e50; font-weight:600; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid #f0f2f5; }
+.tip-item { display:flex; gap:14px; margin-bottom:16px; }
+.tip-item:last-child { margin-bottom:0; }
+.tip-num { color:#e74c3c; font-size:13px; font-weight:700; font-family:'IBM Plex Serif',serif; flex-shrink:0; margin-top:1px; }
+.tip-item p { color:#7f8c8d; font-size:13px; line-height:1.6; font-weight:400; }
+
+.sell-rules-box { background:#2c3e50; border-radius:6px; padding:24px; }
+.rules-title { font-size:11px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,0.5); font-weight:700; margin-bottom:16px; }
+.sell-rules-box ul { list-style:none; display:flex; flex-direction:column; gap:10px; }
+.sell-rules-box ul li { color:rgba(255,255,255,0.65); font-size:13px; font-weight:400; padding-left:16px; position:relative; }
+.sell-rules-box ul li::before { content:'—'; position:absolute; left:0; color:#e74c3c; font-weight:700; }
+
+@media (max-width:900px) {
+  .sell-section { padding:30px 20px 60px; }
+  .sell-layout { grid-template-columns:1fr; }
+  .upload-grid { grid-template-columns:repeat(3,1fr); }
+  .form-row { grid-template-columns:1fr; }
+}

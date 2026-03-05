@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explore — XChangeIt</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='slate.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='explore.css') }}">
+</head>
+<body>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="flash-wrap">
+      {% for msg in messages %}<div class="flash-msg">{{ msg }}</div>{% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<div class="topbar">
+  <span>GEC Palakkad — Official Student Marketplace</span>
+  <div class="topbar-links">
+    <a href="{{ url_for('home') }}#faq">Help</a>
+    <a href="{{ url_for('home') }}">Home</a>
+  </div>
+</div>
+
+<nav class="navbar">
+  <a href="{{ url_for('home') }}" class="logo">XChange<span>It</span></a>
+  <div class="nav-links">
+    <a href="{{ url_for('home') }}">Home</a>
+    <a href="{{ url_for('explore') }}" class="active">Explore</a>
+    <a href="{{ url_for('home') }}#how">How It Works</a>
+    <a href="{{ url_for('home') }}#faq">FAQs</a>
+  </div>
+  <div class="nav-right">
+    {% if session.get('user') %}
+      <span class="nav-welcome">{{ session.get('user') }}</span>
+      <a href="{{ url_for('cart') }}" class="btn-nav-ghost">Cart</a>
+      <a href="{{ url_for('logout') }}" class="btn-nav-fill">Logout</a>
+    {% else %}
+      <a href="{{ url_for('login') }}" class="btn-nav-ghost">Login</a>
+      <a href="{{ url_for('signup') }}" class="btn-nav-fill">Sign Up</a>
+    {% endif %}
+  </div>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="overline">Browse</span>
+    <h1>All Listings</h1>
+    <p>Find what you need from verified GEC Palakkad students.</p>
+  </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <div class="filter-inner">
+    <div class="filter-tabs">
+      <a href="{{ url_for('explore') }}"
+         class="filter-tab {% if category=='all' %}active{% endif %}">All Items</a>
+      <a href="{{ url_for('explore', category='buy') }}"
+         class="filter-tab {% if category=='buy' %}active{% endif %}">Buy</a>
+      <a href="{{ url_for('explore', category='rent') }}"
+         class="filter-tab {% if category=='rent' %}active{% endif %}">Rent</a>
+    </div>
+    <a href="{{ url_for('sell') }}" class="btn-nav-fill" style="font-size:12px; padding:8px 18px; border-radius:3px;">+ Post Item</a>
+  </div>
+</div>
+
+<!-- PRODUCTS GRID -->
+<div class="products-section">
+  <div class="products-inner">
+    {% if products %}
+    <div class="products-grid">
+      {% for product in products %}
+      <div class="product-card"
+           onclick="window.location.href='{{ url_for('product_detail', product_id=product[0]) }}'">
+        <div class="product-img">
+          {% if product[6] %}
+            <img src="{{ url_for('static', filename='uploads/' + product[6]) }}" alt="{{ product[1] }}">
+          {% else %}
+            <div class="product-img-placeholder">
+              <span>📦</span>
+            </div>
+          {% endif %}
+          <div class="product-badge {% if product[5]=='rent' %}badge-rent{% else %}badge-buy{% endif %}">
+            {{ product[5]|upper if product[5] else 'BUY' }}
+          </div>
+        </div>
+        <div class="product-body">
+          <h3>{{ product[1] }}</h3>
+          <p class="product-desc">{{ product[3] }}</p>
+          <div class="product-footer">
+            <span class="product-price">₹ {{ product[2] }}</span>
+            <button class="wishlist-btn" onclick="event.stopPropagation()">♡ Wishlist</button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+      <span class="empty-icon">📭</span>
+      <h3>No listings found</h3>
+      <p>Be the first to post an item in this category.</p>
+      <a href="{{ url_for('sell') }}" class="btn-red" style="margin-top:20px;">Post an Item</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-col">
+      <span class="footer-logo">XChange<span>It</span></span>
+      <p class="footer-desc">Verified student marketplace for GEC Palakkad.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Navigation</h4>
+      <ul>
+        <li><a href="{{ url_for('home') }}">Home</a></li>
+        <li><a href="{{ url_for('explore') }}">Explore</a></li>
+        <li><a href="{{ url_for('sell') }}">Sell / Rent</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Account</h4>
+      <ul>
+        <li><a href="{{ url_for('login') }}">Login</a></li>
+        <li><a href="{{ url_for('signup') }}">Sign Up</a></li>
+        <li><a href="{{ url_for('cart') }}">My Cart</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Contact</h4>
+      <p>support@xchangeit.in</p>
+      <p>GEC Palakkad, Kerala</p>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2026 XChangeIt · GEC Palakkad</div>
+</footer>
+
+<a href="{{ url_for('sell') }}" class="fab">+ Sell / Rent</a>
+
+</body>
+</html>

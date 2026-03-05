@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sell / Rent — XChangeIt</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='slate.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sell.css') }}">
+</head>
+<body>
+{% with messages = get_flashed_messages() %}{% if messages %}<div class="flash-wrap">{% for msg in messages %}<div class="flash-msg">{{ msg }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+<div class="topbar">
+  <span>GEC Palakkad — Official Student Marketplace</span>
+  <div class="topbar-links"><a href="{{ url_for('explore') }}">Browse Listings</a></div>
+</div>
+<nav class="navbar">
+  <a href="{{ url_for('home') }}" class="logo">XChange<span>It</span></a>
+  <div class="nav-links">
+    <a href="{{ url_for('home') }}">Home</a>
+    <a href="{{ url_for('explore') }}">Explore</a>
+    <a href="{{ url_for('sell') }}" class="active">Sell / Rent</a>
+  </div>
+  <div class="nav-right">
+    {% if session.get('user') %}
+      <span class="nav-welcome">{{ session.get('user') }}</span>
+      <a href="{{ url_for('cart') }}" class="btn-nav-ghost">Cart</a>
+      <a href="{{ url_for('logout') }}" class="btn-nav-fill">Logout</a>
+    {% else %}
+      <a href="{{ url_for('login') }}" class="btn-nav-ghost">Login</a>
+      <a href="{{ url_for('signup') }}" class="btn-nav-fill">Sign Up</a>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="overline">Post a Listing</span>
+    <h1>Sell or Rent an Item</h1>
+    <p>List your item to over 1,200 verified GEC Palakkad students.</p>
+  </div>
+</div>
+
+<div class="sell-section">
+  <div class="sell-layout">
+
+    <!-- FORM -->
+    <div class="sell-form-wrap">
+      <form method="POST" enctype="multipart/form-data" class="sell-form">
+
+        <div class="form-section">
+          <div class="form-section-title">Item Details</div>
+          <div class="form-group">
+            <label>Product Name</label>
+            <input type="text" name="name" placeholder="e.g. Engineering Calculator FX-991" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Price (₹)</label>
+              <input type="number" name="price" placeholder="0" required>
+            </div>
+            <div class="form-group">
+              <label>Listing Type</label>
+              <div class="radio-row">
+                <label class="radio-option">
+                  <input type="radio" name="category" value="buy" required>
+                  <span>Sell</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="category" value="rent">
+                  <span>Rent</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Short Description</label>
+            <input type="text" name="short_desc" placeholder="One line summary of your item" required>
+          </div>
+          <div class="form-group">
+            <label>Detailed Description</label>
+            <textarea name="detailed_desc" rows="5" placeholder="Describe the condition, features, and any important details..." required></textarea>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">Photos <span class="optional-tag">Up to 5 images</span></div>
+          <div class="upload-grid">
+            <label class="upload-slot"><input type="file" name="image1" accept="image/*"><span>📷</span><span>Photo 1</span></label>
+            <label class="upload-slot"><input type="file" name="image2" accept="image/*"><span>📷</span><span>Photo 2</span></label>
+            <label class="upload-slot"><input type="file" name="image3" accept="image/*"><span>📷</span><span>Photo 3</span></label>
+            <label class="upload-slot"><input type="file" name="image4" accept="image/*"><span>📷</span><span>Photo 4</span></label>
+            <label class="upload-slot"><input type="file" name="image5" accept="image/*"><span>📷</span><span>Photo 5</span></label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-red" style="width:100%; padding:16px; font-size:14px;">
+          Post Listing →
+        </button>
+
+      </form>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="sell-sidebar">
+      <div class="sell-tip-box">
+        <div class="tip-title">Tips for a Great Listing</div>
+        <div class="tip-item"><span class="tip-num">01</span><p>Use clear, well-lit photos from multiple angles.</p></div>
+        <div class="tip-item"><span class="tip-num">02</span><p>Be honest about the condition of the item.</p></div>
+        <div class="tip-item"><span class="tip-num">03</span><p>Set a fair price — check similar listings first.</p></div>
+        <div class="tip-item"><span class="tip-num">04</span><p>Include brand, model, and purchase year if relevant.</p></div>
+      </div>
+      <div class="sell-rules-box">
+        <div class="rules-title">Listing Rules</div>
+        <ul>
+          <li>Only GEC Palakkad students may list items</li>
+          <li>No counterfeit or illegal products</li>
+          <li>Accurate descriptions required</li>
+          <li>Meetups must be on campus only</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-col"><span class="footer-logo">XChange<span>It</span></span><p class="footer-desc">Verified student marketplace for GEC Palakkad.</p></div>
+    <div class="footer-col"><h4>Navigation</h4><ul><li><a href="{{ url_for('home') }}">Home</a></li><li><a href="{{ url_for('explore') }}">Explore</a></li></ul></div>
+    <div class="footer-col"><h4>Account</h4><ul><li><a href="{{ url_for('login') }}">Login</a></li><li><a href="{{ url_for('cart') }}">My Cart</a></li></ul></div>
+    <div class="footer-col"><h4>Contact</h4><p>support@xchangeit.in</p></div>
+  </div>
+  <div class="footer-bottom">© 2026 XChangeIt · GEC Palakkad</div>
+</footer>
+</body>
+</html>
