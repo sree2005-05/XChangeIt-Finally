@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chats for {{ product.name }} — XChangeIt</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='slate.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+
+<nav class="navbar">
+
+  <!-- LEFT SIDE -->
+  <div style="display:flex; align-items:center; gap:10px;">
+
+    <!-- Home Icon -->
+    <a href="{{ url_for('home') }}" class="nav-icon-btn" data-tooltip="Home">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 11L12 3l9 8"></path>
+        <path d="M5 10v10h14V10"></path>
+      </svg>
+    </a>
+
+    <!-- Logo -->
+    <a href="{{ url_for('home') }}" class="logo">XChange<span>It</span></a>
+
+  </div>
+ 
+  <div class="nav-right">
+    <a href="{{ url_for('cart') }}" class="nav-icon-btn" data-tooltip="Cart">
+      <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    </a>
+    <a href="{{ url_for('wishlist') }}" class="nav-icon-btn" data-tooltip="Wishlist">
+      <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+    </a>
+    <a href="{{ url_for('my_listings_chat') }}" class="nav-icon-btn" data-tooltip="Chats">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      {% if pending_count and pending_count > 0 %}
+        <span class="nav-badge">{{ pending_count }}</span>
+      {% endif %}
+    </a>
+    <a href="{{ url_for('profile') }}" class="nav-icon-btn nav-profile-btn" data-tooltip="{{ current_user }}">
+      {{ current_user[0]|upper }}
+    </a>
+  </div>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="inbox-header">
+  <div class="inbox-header-inner">
+    <span class="overline">My Listing · Chats</span>
+    <h1>{{ product.name }}</h1>
+    <p>₹ {{ product.price }} — all buyer conversations for this item</p>
+  </div>
+</div>
+
+<div class="inbox-page">
+  <div class="inbox-inner">
+
+    <!-- PRODUCT CARD -->
+    <div style="background:#fff; border:1px solid #e5eaef; border-radius:6px; padding:20px; display:flex; gap:20px; align-items:center;">
+      <div style="width:72px; height:72px; border-radius:4px; overflow:hidden; background:#f4f6f9; flex-shrink:0; display:flex; align-items:center; justify-content:center;">
+        {% if product.image1 %}
+          <img src="{{ url_for('static', filename='uploads/' + product.image1) }}" style="width:100%; height:100%; object-fit:cover;" alt="">
+        {% else %}
+          <span style="font-size:28px;">📦</span>
+        {% endif %}
+      </div>
+      <div style="flex:1;">
+        <div style="font-family:'IBM Plex Serif',serif; font-size:18px; font-weight:600; color:#2c3e50;">{{ product.name }}</div>
+        <div style="color:#95a5a6; font-size:13px; margin-top:4px;">{{ product.short_desc }}</div>
+      </div>
+      <div style="font-family:'IBM Plex Serif',serif; font-size:22px; font-weight:700; color:#e74c3c;">₹ {{ product.price }}</div>
+      <a href="{{ url_for('product_detail', product_id=product.id) }}" class="btn-outline-slate" style="padding:8px 16px; font-size:11px; white-space:nowrap;">View Listing</a>
+    </div>
+
+    <!-- PENDING REQUESTS -->
+    {% set pending_list = all_reqs | selectattr('status', 'equalto', 'pending') | list %}
+    {% if pending_list %}
+    <div class="inbox-section">
+      <div class="inbox-section-head">
+        <div class="inbox-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Pending Requests
+        </div>
+        <span class="inbox-count-badge">{{ pending_list|length }}</span>
+      </div>
+
+      {% for req in pending_list %}
+      <div class="request-card">
+        <div class="request-product-img" style="background:#f4f6f9; display:flex; align-items:center; justify-content:center;">
+          <div class="request-avatar" style="width:38px; height:38px; font-size:16px;">{{ req['buyer'][0]|upper }}</div>
+        </div>
+        <div class="request-info">
+          <div class="request-product-name">{{ req['buyer'] }} wants to chat</div>
+          <div class="request-buyer">
+            <span class="request-avatar">{{ req['buyer'][0]|upper }}</span>
+            <span>Buyer request received</span>
+          </div>
+          <div class="request-time">{{ req['created_at'][:10] if req.get('created_at') else '' }}</div>
+        </div>
+        <div class="request-actions">
+          <a href="{{ url_for('respond_request', request_id=req['id'], action='accepted') }}"
+             class="req-btn req-accept">✓ Accept</a>
+          <a href="{{ url_for('respond_request', request_id=req['id'], action='declined') }}"
+             class="req-btn req-decline">✕ Decline</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ACTIVE CHATS -->
+    {% set accepted_list = all_reqs | selectattr('status', 'equalto', 'accepted') | list %}
+    {% if accepted_list %}
+    <div class="inbox-section">
+      <div class="inbox-section-head">
+        <div class="inbox-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Active Chats
+        </div>
+        <span style="font-size:12px; color:#7f8c8d; font-weight:600;">{{ accepted_list|length }} conversation{% if accepted_list|length != 1 %}s{% endif %}</span>
+      </div>
+
+      {% for req in accepted_list %}
+      {% set parts = [req['buyer'], req['seller']] | sort %}
+      {% set room = "p" ~ product.id ~ "_" ~ parts[0] ~ "_" ~ parts[1] %}
+      <a href="{{ url_for('chat_page', product_id=product.id, buyer=req['buyer']) }}"
+         class="chat-row"
+         data-room="{{ room }}"
+         data-me="{{ current_user }}">
+        <div class="chat-row-img" style="background:#e74c3c; border-radius:50%; width:48px; height:48px; display:flex; align-items:center; justify-content:center; color:#fff; font-family:'IBM Plex Serif',serif; font-size:20px; font-weight:700; flex-shrink:0;">
+          {{ req['buyer'][0]|upper }}
+        </div>
+        <div class="chat-row-info">
+          <div class="chat-row-name">{{ req['buyer'] }}</div>
+          <div class="chat-row-sub">Buyer · accepted {{ req['created_at'][:10] if req.get('created_at') else '' }}</div>
+          <div class="chat-row-last" id="last_{{ room }}">Loading...</div>
+        </div>
+        <div class="chat-row-right">
+          <span class="chat-unread-badge" id="badge_{{ room }}" style="display:none;"></span>
+          <span style="font-size:18px; color:#bdc3c7;">›</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- DECLINED -->
+    {% set declined_list = all_reqs | selectattr('status', 'equalto', 'declined') | list %}
+    {% if declined_list %}
+    <div class="inbox-section">
+      <div class="inbox-section-head">
+        <div class="inbox-section-title" style="color:#bdc3c7;">Declined Requests ({{ declined_list|length }})</div>
+      </div>
+      {% for req in declined_list %}
+      <div class="chat-row" style="opacity:0.45; cursor:default;">
+        <div class="chat-row-img" style="background:#ecf0f1; border-radius:50%; width:48px; height:48px; display:flex; align-items:center; justify-content:center; color:#95a5a6; font-size:20px; font-weight:700;">
+          {{ req['buyer'][0]|upper }}
+        </div>
+        <div class="chat-row-info">
+          <div class="chat-row-name">{{ req['buyer'] }}</div>
+          <div class="chat-row-sub">Request declined · {{ req['created_at'][:10] if req.get('created_at') else '' }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if not all_reqs %}
+    <div class="inbox-empty">
+      <span style="font-size:64px; opacity:0.25;">💬</span>
+      <h3>No requests yet</h3>
+      <p>When a buyer sends a chat request for this item, it will appear here.</p>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = "{{ SUPABASE_URL }}";
+  const SUPABASE_KEY = "{{ SUPABASE_KEY }}";
+  const CURRENT_USER = "{{ current_user }}";
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  async function loadPreviews() {
+    const rows = document.querySelectorAll(".chat-row[data-room]");
+    for (const row of rows) {
+      const room    = row.dataset.room;
+      const lastEl  = document.getElementById(`last_${room}`);
+      const badgeEl = document.getElementById(`badge_${room}`);
+      if (!lastEl) continue;
+
+      const { data: msgs } = await sb
+        .from("messages").select("sender,content")
+        .eq("room_id", room).order("created_at", { ascending: false }).limit(1);
+
+      if (msgs && msgs.length > 0) {
+        const m = msgs[0];
+        lastEl.textContent = (m.sender === CURRENT_USER ? "You: " : m.sender + ": ") +
+          m.content.substring(0, 50) + (m.content.length > 50 ? "…" : "");
+      } else {
+        lastEl.textContent = "No messages yet";
+      }
+
+      if (badgeEl) {
+        const { count } = await sb.from("messages")
+          .select("id", { count: "exact", head: true })
+          .eq("room_id", room).eq("seen", false).neq("sender", CURRENT_USER);
+        if (count && count > 0) {
+          badgeEl.textContent = count;
+          badgeEl.style.display = "inline-flex";
+        }
+      }
+    }
+  }
+
+  // Real-time: reload page if a new request comes in for this product
+  sb.channel("product_reqs_{{ product.id }}")
+    .on("postgres_changes", {
+      event: "*", schema: "public", table: "chat_requests",
+      filter: `product_id=eq.{{ product.id }}`
+    }, () => { window.location.reload(); })
+    .subscribe();
+
+  loadPreviews();
+</script>
+
+</body>
+</html>

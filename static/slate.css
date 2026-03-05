@@ -192,3 +192,66 @@ a { text-decoration: none; color: inherit; }
 @media (max-width: 600px) {
   .footer-grid { grid-template-columns: 1fr; }
 }
+
+/* ── NAV ICON BUTTONS ── */
+.nav-right { display: flex; gap: 6px; align-items: center; }
+
+.nav-icon-btn {
+  position: relative;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.75);
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.nav-icon-btn:hover {
+  background: rgba(255,255,255,0.16);
+  border-color: rgba(255,255,255,0.32);
+  color: #fff;
+}
+.nav-icon-btn svg {
+  width: 17px; height: 17px;
+  stroke: currentColor; fill: none;
+  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+  flex-shrink: 0;
+}
+.nav-profile-btn {
+  background: #e74c3c; border-color: #e74c3c;
+  font-family: 'IBM Plex Serif', serif;
+  font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 0;
+}
+.nav-profile-btn:hover { background: #c0392b; border-color: #c0392b; color: #fff; }
+
+/* Chat request badge on nav icon */
+.nav-icon-btn .nav-badge {
+  position: absolute; top: -3px; right: -3px;
+  min-width: 16px; height: 16px;
+  background: #e74c3c; color: #fff;
+  font-size: 9px; font-weight: 700;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 4px;
+  border: 2px solid #2c3e50;
+  font-family: 'Raleway', sans-serif;
+  pointer-events: none;
+}
+
+/* Tooltip */
+.nav-icon-btn::after {
+  content: attr(data-tooltip);
+  position: absolute; bottom: -32px; left: 50%;
+  transform: translateX(-50%);
+  background: #1a252f; color: rgba(255,255,255,0.8);
+  font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
+  padding: 4px 8px; border-radius: 3px;
+  white-space: nowrap; pointer-events: none;
+  opacity: 0; transition: opacity 0.2s;
+  font-family: 'Raleway', sans-serif; z-index: 9999;
+}
+.nav-icon-btn:hover::after { opacity: 1; }

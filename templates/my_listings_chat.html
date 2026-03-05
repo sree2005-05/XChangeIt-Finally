@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Chats — XChangeIt</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='slate.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<nav class="navbar">
+
+  <!-- LEFT SIDE -->
+  <div style="display:flex; align-items:center; gap:10px;">
+
+    <!-- Home Icon -->
+    <a href="{{ url_for('home') }}" class="nav-icon-btn" data-tooltip="Home">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 11L12 3l9 8"></path>
+        <path d="M5 10v10h14V10"></path>
+      </svg>
+    </a>
+
+    <!-- Logo -->
+    <a href="{{ url_for('home') }}" class="logo">XChange<span>It</span></a>
+
+  </div>
+ 
+  <div class="nav-right">
+    <a href="{{ url_for('cart') }}" class="nav-icon-btn" data-tooltip="Cart">
+      <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    </a>
+    <a href="{{ url_for('wishlist') }}" class="nav-icon-btn" data-tooltip="Wishlist">
+      <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+    </a>
+    <a href="{{ url_for('my_listings_chat') }}" class="nav-icon-btn active" data-tooltip="Chats">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      {% if pending_count and pending_count > 0 %}
+        <span class="nav-badge">{{ pending_count }}</span>
+      {% endif %}
+    </a>
+    <a href="{{ url_for('profile') }}" class="nav-icon-btn nav-profile-btn" data-tooltip="{{ current_user }}">
+      {{ current_user[0]|upper }}
+    </a>
+  </div>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="inbox-header">
+  <div class="inbox-header-inner">
+    <span class="overline">Messages</span>
+    <h1>My Chats</h1>
+    <p>Your listings and conversations in one place.</p>
+  </div>
+</div>
+
+<div class="inbox-page">
+  <div class="inbox-inner">
+
+    <!-- ── MY LISTINGS (seller view) ── -->
+    {% if my_products %}
+    <div class="inbox-section">
+      <div class="inbox-section-head">
+        <div class="inbox-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+          My Listings — Buyer Requests
+        </div>
+        {% set total_pending = my_products | sum(attribute='pending_count') %}
+        {% if total_pending > 0 %}
+          <span class="inbox-count-badge">{{ total_pending }} pending</span>
+        {% endif %}
+      </div>
+
+      {% for product in my_products %}
+      <a href="{{ url_for('product_chats', product_id=product.id) }}" class="chat-row">
+        <div class="chat-row-img">
+          {% if product.image1 %}
+            <img src="{{ url_for('static', filename='uploads/' + product.image1) }}" alt="">
+          {% else %}<span>📦</span>{% endif %}
+        </div>
+        <div class="chat-row-info">
+          <div class="chat-row-name">{{ product.name }}</div>
+          <div class="chat-row-sub">
+            ₹ {{ product.price }} ·
+            {% if product.pending_count > 0 %}
+              <span style="color:#e74c3c; font-weight:700;">{{ product.pending_count }} pending request{% if product.pending_count != 1 %}s{% endif %}</span>
+            {% elif product.chat_count > 0 %}
+              {{ product.chat_count }} active chat{% if product.chat_count != 1 %}s{% endif %}
+            {% else %}
+              No requests yet
+            {% endif %}
+          </div>
+        </div>
+        <div class="chat-row-right">
+          {% if product.pending_count > 0 %}
+            <span class="chat-unread-badge">{{ product.pending_count }}</span>
+          {% elif product.chat_count > 0 %}
+            <span style="font-size:12px; color:#27ae60; font-weight:700;">{{ product.chat_count }} 💬</span>
+          {% endif %}
+          <span style="font-size:18px; color:#bdc3c7;">›</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ── BUYING CHATS ── -->
+    {% if buying_chats %}
+    <div class="inbox-section">
+      <div class="inbox-section-head">
+        <div class="inbox-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+          </svg>
+          Chats I Started (Buying)
+        </div>
+      </div>
+      {% for req in buying_chats %}
+      {% set prod = buying_products_map.get(req['product_id'], {}) %}
+      <a href="{{ url_for('chat_page', product_id=req['product_id'], buyer=current_user) }}"
+         class="chat-row"
+         data-room="p{{ req['product_id'] }}_{{ [req['buyer'], req['seller']]|sort|join('_') }}"
+         data-me="{{ current_user }}">
+        <div class="chat-row-img">
+          {% if prod.get('image1') %}
+            <img src="{{ url_for('static', filename='uploads/' + prod['image1']) }}" alt="">
+          {% else %}<span>📦</span>{% endif %}
+        </div>
+        <div class="chat-row-info">
+          <div class="chat-row-name">{{ prod.get('name', 'Unknown Product') }}</div>
+          <div class="chat-row-sub">Seller: {{ req['seller'] }} · ₹ {{ prod.get('price', '') }}</div>
+          <div class="chat-row-last"
+               id="last_p{{ req['product_id'] }}_{{ [req['buyer'], req['seller']]|sort|join('_') }}">
+            Loading...
+          </div>
+        </div>
+        <div class="chat-row-right">
+          <span class="chat-unread-badge"
+                id="badge_p{{ req['product_id'] }}_{{ [req['buyer'], req['seller']]|sort|join('_') }}"
+                style="display:none;"></span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if not my_products and not buying_chats %}
+    <div class="inbox-empty">
+      <span style="font-size:64px; opacity:0.25;">💬</span>
+      <h3>No chats yet</h3>
+      <p>Browse listings to start a conversation, or post an item to receive requests.</p>
+      <a href="{{ url_for('explore') }}" class="btn-red" style="margin-top:20px;">Browse Listings</a>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL  = "{{ SUPABASE_URL if SUPABASE_URL is defined else '' }}";
+  const SUPABASE_KEY  = "{{ SUPABASE_KEY if SUPABASE_KEY is defined else '' }}";
+  const CURRENT_USER  = "{{ current_user }}";
+</script>
+{% if buying_chats %}
+<script>
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  async function loadPreviews() {
+    const rows = document.querySelectorAll(".chat-row[data-room]");
+    for (const row of rows) {
+      const room    = row.dataset.room;
+      const lastEl  = document.getElementById(`last_${room}`);
+      const badgeEl = document.getElementById(`badge_${room}`);
+      if (!lastEl) continue;
+
+      const { data: msgs } = await sb
+        .from("messages").select("sender,content")
+        .eq("room_id", room).order("created_at", { ascending: false }).limit(1);
+
+      if (msgs && msgs.length > 0) {
+        const m = msgs[0];
+        lastEl.textContent = (m.sender === CURRENT_USER ? "You: " : "") +
+          m.content.substring(0, 55) + (m.content.length > 55 ? "…" : "");
+      } else {
+        lastEl.textContent = "No messages yet — say hello!";
+      }
+
+      if (badgeEl) {
+        const { count } = await sb.from("messages")
+          .select("id", { count: "exact", head: true })
+          .eq("room_id", room).eq("seen", false).neq("sender", CURRENT_USER);
+        if (count && count > 0) {
+          badgeEl.textContent = count;
+          badgeEl.style.display = "inline-flex";
+        }
+      }
+    }
+  }
+  loadPreviews();
+
+  // Real-time: notify buyer instantly when their request gets accepted
+  const sbRT = createClient(SUPABASE_URL, SUPABASE_KEY);
+  sbRT.channel('buyer_accepted_' + CURRENT_USER)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'chat_requests',
+      filter: `buyer=eq.${CURRENT_USER}`
+    }, (payload) => {
+      if (payload.new.status === 'accepted') {
+        // Flash the chat icon badge and reload to show new chat
+        const chatLink = document.querySelector('.nav-icon-btn[data-tooltip="Chats"]');
+        if (chatLink) {
+          let b = chatLink.querySelector('.nav-badge');
+          if (!b) { b = document.createElement('span'); b.className = 'nav-badge'; chatLink.appendChild(b); }
+          b.textContent = '!'; b.style.display = 'inline-flex';
+          b.style.background = '#27ae60'; // green = good news
+        }
+        // Show a toast
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#27ae60;color:#fff;padding:14px 28px;border-radius:6px;font-weight:600;font-size:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.2);';
+        toast.textContent = '✓ Your chat request was accepted! You can now chat.';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+        setTimeout(() => window.location.reload(), 2000);
+      }
+    })
+    .subscribe();
+</script>
+{% endif %}
+
+<script>
+  // Always run: notify buyer when any of their requests get accepted
+  if (typeof supabase !== 'undefined' && SUPABASE_URL && SUPABASE_KEY && CURRENT_USER) {
+    const { createClient: _create } = supabase;
+    const _sbBuyer = _create(SUPABASE_URL, SUPABASE_KEY);
+    _sbBuyer.channel('buyer_notify_' + CURRENT_USER)
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'chat_requests',
+        filter: `buyer=eq.${CURRENT_USER}`
+      }, (payload) => {
+        if (payload.new && payload.new.status === 'accepted') {
+          const chatLink = document.querySelector('.nav-icon-btn[data-tooltip="Chats"]');
+          if (chatLink) {
+            let b = chatLink.querySelector('.nav-badge');
+            if (!b) { b = document.createElement('span'); b.className = 'nav-badge'; chatLink.appendChild(b); }
+            b.textContent = '✓'; b.style.display = 'inline-flex';
+            b.style.background = '#27ae60';
+          }
+          const toast = document.createElement('div');
+          toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#27ae60;color:#fff;padding:14px 28px;border-radius:6px;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.25);cursor:pointer;';
+          toast.innerHTML = '✓ Your chat request was accepted! <u>Open Chat</u>';
+          toast.onclick = () => window.location.href = '/my_listings_chat';
+          document.body.appendChild(toast);
+          setTimeout(() => { toast.remove(); window.location.reload(); }, 4000);
+        }
+      })
+      .subscribe();
+  }
+</script>
+</body>
+</html>

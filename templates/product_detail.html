@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ product[1] }} — XChangeIt</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='slate.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='product_detail.css') }}">
+</head>
+<body>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="flash-wrap">
+      {% for msg in messages %}<div class="flash-msg">{{ msg }}</div>{% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+
+<nav class="navbar">
+
+  <!-- LEFT SIDE -->
+  <div style="display:flex; align-items:center; gap:10px;">
+
+    <!-- Home Icon -->
+    <a href="{{ url_for('home') }}" class="nav-icon-btn" data-tooltip="Home">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 11L12 3l9 8"></path>
+        <path d="M5 10v10h14V10"></path>
+      </svg>
+    </a>
+
+    <!-- Logo -->
+    <a href="{{ url_for('home') }}" class="logo">XChange<span>It</span></a>
+
+  </div>
+ 
+  <div class="nav-right">
+    {% if session.get('user') %}
+      <a href="{{ url_for('cart') }}" class="nav-icon-btn" data-tooltip="Cart">
+        <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      </a>
+      <a href="{{ url_for('wishlist') }}" class="nav-icon-btn" data-tooltip="Wishlist">
+        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      </a>
+      <a href="{{ url_for('my_listings_chat') }}" class="nav-icon-btn" data-tooltip="Chats">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        {% if pending_count and pending_count > 0 %}
+          <span class="nav-badge">{{ pending_count }}</span>
+        {% endif %}
+      </a>
+      <a href="{{ url_for('profile') }}" class="nav-icon-btn nav-profile-btn" data-tooltip="{{ session.get('user') }}">
+        {{ session.get('user')[0]|upper }}
+      </a>
+    {% else %}
+      <a href="{{ url_for('login') }}" class="btn-nav-ghost">Login</a>
+      <a href="{{ url_for('signup') }}" class="btn-nav-fill">Sign Up</a>
+    {% endif %}
+  </div>
+</nav>
+
+<!-- BREADCRUMB -->
+<div class="breadcrumb">
+  <div class="breadcrumb-inner">
+    <a href="{{ url_for('home') }}">Home</a>
+    <span class="bc-sep">›</span>
+    <a href="{{ url_for('explore') }}">Explore</a>
+    <span class="bc-sep">›</span>
+    <span>{{ product[1] }}</span>
+  </div>
+</div>
+
+<!-- PRODUCT DETAIL -->
+<div class="detail-section">
+  <div class="detail-inner">
+
+    <!-- LEFT: IMAGE -->
+    <div class="detail-img-col">
+      <div class="detail-img-wrap">
+        {% if product[6] %}
+          <img src="{{ url_for('static', filename='uploads/' + product[6]) }}" alt="{{ product[1] }}">
+        {% else %}
+          <div class="detail-img-placeholder"><span>📦</span></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- RIGHT: INFO -->
+    <div class="detail-info-col">
+
+      <div class="detail-badge-row">
+        <span class="detail-badge {% if product[5]=='rent' %}badge-rent{% else %}badge-buy{% endif %}">
+          {{ product[5]|upper if product[5] else 'BUY' }}
+        </span>
+        <span class="detail-cat">{{ product[4] if product[4] else 'General' }}</span>
+      </div>
+
+      <h1 class="detail-title">{{ product[1] }}</h1>
+      <div class="detail-price">₹ {{ product[2] }}</div>
+
+      <div class="detail-divider"></div>
+
+      <div class="detail-desc-label">Description</div>
+      <p class="detail-desc">{{ product[3] }}</p>
+
+      <div class="detail-divider"></div>
+
+      <!-- ACTIONS -->
+      <div class="detail-actions">
+        <a href="{{ url_for('add_to_cart', product_id=product[0]) }}" class="btn-red detail-btn">
+          Add to Cart
+        </a>
+        <a href="{{ url_for('add_to_wishlist', product_id=product[0]) }}" class="btn-outline-slate detail-btn">
+          ♡ Add to Wishlist
+        </a>
+        {% if session.get('user') %}
+          {% if session.get('user') and session.get('user') != product[11] %}
+
+    {% if chat_status == None %}
+        <a href="{{ url_for('request_chat', product_id=product[0]) }}" class="detail-btn btn-chat">
+        Request Chat
+        </a>
+
+    {% elif chat_status == "pending" %}
+        <button class="detail-btn btn-chat" disabled>
+        Request Sent
+        </button>
+
+    {% elif chat_status == "accepted" %}
+        <a href="{{ url_for('chat_seller', product_id=product[0]) }}" class="detail-btn btn-chat">
+        Open Chat
+        </a>
+
+    {% endif %}
+
+{% endif %}
+        {% else %}
+          <a href="{{ url_for('login') }}" class="btn-chat detail-btn">
+            💬 Login to Chat with Seller
+          </a>
+        {% endif %}
+      </div>
+
+      <!-- TRUST SIGNALS -->
+      <div class="trust-box">
+        <div class="trust-item">
+          <span class="trust-icon">✓</span>
+          <span>Verified student seller</span>
+        </div>
+        <div class="trust-item">
+          <span class="trust-icon">✓</span>
+          <span>Safe on-campus exchange</span>
+        </div>
+        <div class="trust-item">
+          <span class="trust-icon">✓</span>
+          <span>Direct chat with seller</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-col">
+      <span class="footer-logo">XChange<span>It</span></span>
+      <p class="footer-desc">Verified student marketplace for GEC Palakkad.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Navigation</h4>
+      <ul>
+        <li><a href="{{ url_for('home') }}">Home</a></li>
+        <li><a href="{{ url_for('explore') }}">Explore</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Account</h4>
+      <ul>
+        <li><a href="{{ url_for('login') }}">Login</a></li>
+        <li><a href="{{ url_for('cart') }}">My Cart</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Contact</h4>
+      <p><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8dfef8fdfde2fff9cdf5eee5ece3eae8e4f9a3e4e3">[email&#160;protected]</a></p>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  (function() {
+    if (!document.querySelector('.nav-icon-btn[data-tooltip="Chats"]')) return;
+    function refreshBadge() {
+      fetch('/api/pending_count').then(r=>r.json()).then(data=>{
+        const chatLink = document.querySelector('.nav-icon-btn[data-tooltip="Chats"]');
+        if (!chatLink) return;
+        const total = (data.count||0) + (data.accepted_count||0);
+        let b = chatLink.querySelector('.nav-badge');
+        if (total > 0) {
+          if (!b) { b = document.createElement('span'); b.className='nav-badge'; chatLink.appendChild(b); }
+          b.textContent = total; b.style.display = 'inline-flex';
+        } else if (b) { b.style.display = 'none'; }
+      }).catch(()=>{});
+    }
+    refreshBadge();
+    setInterval(refreshBadge, 8000);
+
+    // Real-time: Supabase listener for instant accepted notification
+    const SURL = "{{ SUPABASE_URL }}";
+    const SKEY = "{{ SUPABASE_KEY }}";
+    const ME   = "{{ session.get('user') or '' }}";
+    if (SURL && SKEY && ME && typeof supabase !== 'undefined') {
+      const { createClient } = supabase;
+      const sb = createClient(SURL, SKEY);
+      sb.channel('buyer_detail_' + ME)
+        .on('postgres_changes', {
+          event: 'UPDATE', schema: 'public', table: 'chat_requests',
+          filter: `buyer=eq.${ME}`
+        }, (payload) => {
+          if (payload.new && payload.new.status === 'accepted') {
+            // Update button to "Open Chat"
+            const pendingBtn = document.querySelector('.btn-chat[disabled]');
+            if (pendingBtn) {
+              const link = document.createElement('a');
+              link.href = '/chat_seller/' + payload.new.product_id;
+              link.className = 'detail-btn btn-chat';
+              link.textContent = 'Open Chat';
+              pendingBtn.replaceWith(link);
+            }
+            // Toast
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#27ae60;color:#fff;padding:14px 28px;border-radius:6px;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.25);cursor:pointer;';
+            toast.innerHTML = '✓ Seller accepted your request! <u>Open Chat →</u>';
+            toast.onclick = () => window.location.href = '/chat_seller/' + payload.new.product_id;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 6000);
+            refreshBadge();
+          }
+        })
+        .subscribe();
+    }
+  })();
+</script>
+</body>
+</html>

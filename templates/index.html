@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XChangeIt — Campus Marketplace</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='slate.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+</head>
+<body>
+
+<!-- FLASH -->
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="flash-wrap">
+      {% for msg in messages %}
+        <div class="flash-msg">{{ msg }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="{{ url_for('home') }}" class="logo">XChange<span>It</span></a>
+  <div class="nav-links">
+    <a href="{{ url_for('home') }}" class="active">Home</a>
+    <a href="#how">How It Works</a>
+    <a href="#testimonials">Reviews</a>
+    <a href="#faq">FAQs</a>
+    <a href="#abtus">About Us</a>
+  </div>
+  <div class="nav-right">
+    {% if session.get('user') %}
+      <a href="{{ url_for('cart') }}" class="nav-icon-btn" data-tooltip="Cart">
+        <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      </a>
+      <a href="{{ url_for('wishlist') }}" class="nav-icon-btn" data-tooltip="Wishlist">
+        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      </a>
+      <a href="{{ url_for('my_listings_chat') }}" class="nav-icon-btn" data-tooltip="Chats">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        {% if pending_count and pending_count > 0 %}
+          <span class="nav-badge">{{ pending_count }}</span>
+        {% endif %}
+      </a>
+      <a href="{{ url_for('profile') }}" class="nav-icon-btn nav-profile-btn" data-tooltip="{{ session.get('user') }}">
+        {{ session.get('user')[0]|upper }}
+      </a>
+    {% else %}
+      <a href="{{ url_for('login') }}" class="btn-nav-ghost">Login</a>
+      <a href="{{ url_for('signup') }}" class="btn-nav-fill">Sign Up</a>
+    {% endif %}
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner hero-centered">
+    <span class="overline">GEC Palakkad · Campus Marketplace</span>
+    <h1>Buy. Sell.<br>Save Together.</h1>
+    <p>XChangeIt is the campus marketplace built exclusively for GEC Palakkad students. Trade smarter, save money, and reuse within your community.</p>
+    <div class="hero-btns">
+      <a href="{{ url_for('explore') }}" class="btn-red">Browse Listings</a>
+      <a href="{{ url_for('sell') }}" class="btn-ghost-light">Post an Item</a>
+    </div>
+  </div>
+</section>
+
+
+<!-- HOW IT WORKS -->
+<section class="how-section" id="how">
+  <div class="how-inner">
+    <div class="how-header">
+      <span class="overline">The Process</span>
+      <h2 class="sec-title">How XChangeIt Works</h2>
+      <p class="sec-sub">From listing to meeting — your complete journey on the safest campus marketplace.</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div class="step-icon">📷</div>
+        <h3>List Your Item</h3>
+        <p>Take a photo, set your price, and post your item in under 60 seconds.</p>
+        <div class="step-tag">AI-powered descriptions</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div class="step-icon">👥</div>
+        <h3>Buyers Connect</h3>
+        <p>Only verified GEC Palakkad students can browse and contact you.</p>
+        <div class="step-tag">Verified students only</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div class="step-icon">🔔</div>
+        <h3>Get Notified</h3>
+        <p>Receive instant notifications when buyers show interest.</p>
+        <div class="step-tag">Real-time alerts</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <div class="step-icon">🤝</div>
+        <h3>Meet & Exchange</h3>
+        <p>Chat securely and meet on campus to complete your transaction.</p>
+        <div class="step-tag">Safe on-campus handoff</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials-section" id="testimonials">
+  <div class="test-inner">
+    <div class="test-header">
+      <span class="overline">Community Reviews</span>
+      <h2 class="sec-title">What Students Are Saying</h2>
+      {% if session.get('user') %}
+        <a href="{{ url_for('add_review') }}" class="btn-red" style="margin-top:16px; display:inline-block;">
+          + Add Your Review
+        </a>
+      {% endif %}
+    </div>
+
+    <div class="reviews-track">
+      {% for review in reviews %}
+      <div class="review-card">
+        <div class="review-top">
+          <div class="review-avatar">{{ review[0][0] }}</div>
+          <div>
+            <h4>{{ review[0] }}</h4>
+            <span class="review-year">{{ review[2] }}</span>
+          </div>
+        </div>
+        <p class="review-text">{{ review[1] }}</p>
+      </div>
+      {% endfor %}
+      {% if reviews|length == 0 %}
+        <p style="color:#7f8c8d; text-align:center; width:100%; padding:40px 0;">No reviews yet. Be the first!</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section" id="faq">
+  <div class="faq-inner">
+    <span class="overline">Support</span>
+    <h2 class="sec-title">Frequently Asked Questions</h2>
+
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">Can I sell items now and deliver them later? <span class="faq-icon">▶</span></div>
+        <div class="faq-a">Yes, you can list your item now and coordinate delivery timing directly with the buyer.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">I'm a fresher — can I use XChangeIt? <span class="faq-icon">▶</span></div>
+        <div class="faq-a">Yes, all verified GEC Palakkad students can use XChangeIt to buy and sell items.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">How do I contact a seller? <span class="faq-icon">▶</span></div>
+        <div class="faq-a">Use the "Chat with Seller" button available on every product page.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Is it free to list items? <span class="faq-icon">▶</span></div>
+        <div class="faq-a">Yes, listing items on XChangeIt is completely free for students.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Does XChangeIt handle payments? <span class="faq-icon">▶</span></div>
+        <div class="faq-a">Payments are handled directly between buyer and seller by mutual agreement.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT US -->
+<section class="about-section" id="abtus">
+  <div class="about-inner">
+    <div class="about-header">
+      <span class="overline">The Team</span>
+      <h2 class="sec-title">Meet the Builders</h2>
+      <p class="sec-sub">Four GEC Palakkad students who built XChangeIt to make campus life a little easier.</p>
+    </div>
+    <div class="team-grid">
+
+      <div class="team-card">
+        <div class="team-photo-wrap">
+          <div class="team-photo-placeholder">A</div>
+        </div>
+        <div class="team-info">
+          <h3>Teammate One</h3>
+          <span class="team-role">Full Stack Developer</span>
+          <p class="team-bio">Passionate about building products that solve real problems. Handles backend architecture and database design.</p>
+          <div class="team-links">
+            <a href="#" class="team-link" aria-label="LinkedIn">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+            </a>
+            <a href="#" class="team-link" aria-label="GitHub">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="team-card">
+        <div class="team-photo-wrap">
+          <div class="team-photo-placeholder">B</div>
+        </div>
+        <div class="team-info">
+          <h3>Teammate Two</h3>
+          <span class="team-role">UI / UX Designer</span>
+          <p class="team-bio">Obsessed with clean interfaces and great user experiences. Crafted every screen and interaction in XChangeIt.</p>
+          <div class="team-links">
+            <a href="#" class="team-link" aria-label="LinkedIn">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+            </a>
+            <a href="#" class="team-link" aria-label="GitHub">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="team-card">
+        <div class="team-photo-wrap">
+          <div class="team-photo-placeholder">C</div>
+        </div>
+        <div class="team-info">
+          <h3>Teammate Three</h3>
+          <span class="team-role">Frontend Developer</span>
+          <p class="team-bio">Turns designs into pixel-perfect, responsive interfaces. Makes sure XChangeIt looks great on every device.</p>
+          <div class="team-links">
+            <a href="#" class="team-link" aria-label="LinkedIn">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+            </a>
+            <a href="#" class="team-link" aria-label="GitHub">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="team-card">
+        <div class="team-photo-wrap">
+          <div class="team-photo-placeholder">D</div>
+        </div>
+        <div class="team-info">
+          <h3>Teammate Four</h3>
+          <span class="team-role">Product & Marketing</span>
+          <p class="team-bio">Drives product strategy and student outreach. Ensures XChangeIt actually reaches and serves every GEC student.</p>
+          <div class="team-links">
+            <a href="#" class="team-link" aria-label="LinkedIn">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+            </a>
+            <a href="#" class="team-link" aria-label="GitHub">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-col">
+      <span class="footer-logo">XChange<span>It</span></span>
+      <p class="footer-desc">XChangeIt is a safe, verified student marketplace for GEC Palakkad. Buy, sell, and rent within your campus community.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Quick Links</h4>
+      <ul>
+        <li><a href="{{ url_for('home') }}">Home</a></li>
+        <li><a href="{{ url_for('explore') }}">Explore</a></li>
+        <li><a href="#how">How It Works</a></li>
+        <li><a href="#faq">FAQs</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Account</h4>
+      <ul>
+        <li><a href="{{ url_for('login') }}">Login</a></li>
+        <li><a href="{{ url_for('signup') }}">Sign Up</a></li>
+        <li><a href="{{ url_for('sell') }}">Sell / Rent</a></li>
+        <li><a href="{{ url_for('cart') }}">My Cart</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Contact</h4>
+      <p><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f784828787988583b78f949f969990929e83d99e99">[email&#160;protected]</a></p>
+      <p>GEC Palakkad, Kerala</p>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2026 XChangeIt. All Rights Reserved. · GEC Palakkad</div>
+</footer>
+
+<!-- FLOATING SELL BTN -->
+<a href="{{ url_for('sell') }}" class="fab">+ Sell / Rent</a>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><scr
+<script>
+  (function() {
+    if (!document.querySelector('.nav-icon-btn[data-tooltip="Chats"]')) return;
+    function refreshBadge() {
+      fetch('/api/pending_count').then(r=>r.json()).then(data=>{
+        const chatLink = document.querySelector('.nav-icon-btn[data-tooltip="Chats"]');
+        if (!chatLink) return;
+        const total = (data.count||0) + (data.accepted_count||0);
+        let b = chatLink.querySelector('.nav-badge');
+        if (total > 0) {
+          if (!b) { b = document.createElement('span'); b.className='nav-badge'; chatLink.appendChild(b); }
+          b.textContent = total; b.style.display = 'inline-flex';
+        } else if (b) { b.style.display = 'none'; }
+      }).catch(()=>{});
+    }
+    refreshBadge();
+    setInterval(refreshBadge, 8000);
+  })();
+</script>
+</body>
+</html>

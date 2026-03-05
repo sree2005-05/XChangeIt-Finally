@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Inbox — XChangeIt</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='slate.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="flash-wrap">
+      {% for msg in messages %}<div class="flash-msg">{{ msg }}</div>{% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+
+<nav class="navbar">
+
+  <!-- LEFT SIDE -->
+  <div style="display:flex; align-items:center; gap:10px;">
+
+    <!-- Home Icon -->
+    <a href="{{ url_for('home') }}" class="nav-icon-btn" data-tooltip="Home">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 11L12 3l9 8"></path>
+        <path d="M5 10v10h14V10"></path>
+      </svg>
+    </a>
+
+    <!-- Logo -->
+    <a href="{{ url_for('home') }}" class="logo">XChange<span>It</span></a>
+
+  </div>
+ 
+  <div class="nav-right">
+    <a href="{{ url_for('cart') }}" class="nav-icon-btn" data-tooltip="Cart">
+      <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    </a>
+    <a href="{{ url_for('wishlist') }}" class="nav-icon-btn" data-tooltip="Wishlist">
+      <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+    </a>
+    <a href="{{ url_for('my_listings_chat') }}" class="nav-icon-btn active" data-tooltip="Chats">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    </a>
+    <a href="{{ url_for('profile') }}" class="nav-icon-btn nav-profile-btn" data-tooltip="{{ current_user }}">
+      {{ current_user[0]|upper }}
+    </a>
+  </div>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="inbox-header">
+  <div class="inbox-header-inner">
+    <span class="overline">Messages</span>
+    <h1>Chat Inbox</h1>
+    <p>Manage chat requests and your active conversations.</p>
+  </div>
+</div>
+
+<div class="inbox-page">
+  <div class="inbox-inner">
+
+    <!-- ── PENDING REQUESTS (seller sees these) ── -->
+    {% if pending_reqs %}
+    <div class="inbox-section">
+      <div class="inbox-section-head">
+        <div class="inbox-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Pending Requests
+        </div>
+        <span class="inbox-count-badge">{{ pending_reqs|length }}</span>
+      </div>
+
+      {% for req in pending_reqs %}
+      {% set prod = products_map.get(req['product_id'], {}) %}
+      <div class="request-card">
+        <div class="request-product-img">
+          {% if prod.get('image1') %}
+            <img src="{{ url_for('static', filename='uploads/' + prod['image1']) }}" alt="">
+          {% else %}
+            <span>📦</span>
+          {% endif %}
+        </div>
+        <div class="request-info">
+          <div class="request-product-name">{{ prod.get('name', 'Unknown Product') }}</div>
+          <div class="request-buyer">
+            <span class="request-avatar">{{ req['buyer'][0]|upper }}</span>
+            <span><strong>{{ req['buyer'] }}</strong> wants to chat about this item</span>
+          </div>
+          <div class="request-time">{{ req['created_at'][:10] }}</div>
+        </div>
+        <div class="request-actions">
+          <a href="{{ url_for('respond_request', request_id=req['id'], action='accepted') }}"
+             class="req-btn req-accept">✓ Accept</a>
+          <a href="{{ url_for('respond_request', request_id=req['id'], action='declined') }}"
+             class="req-btn req-decline">✕ Decline</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ── ACTIVE CHATS AS BUYER ── -->
+    {% if buyer_accepted %}
+    <div class="inbox-section">
+      <div class="inbox-section-head">
+        <div class="inbox-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Chats I Started (Buying)
+        </div>
+      </div>
+      {% for req in buyer_accepted %}
+      {% set prod = products_map.get(req['product_id'], {}) %}
+      <a href="{{ url_for('chat_page', product_id=req['product_id'], buyer=current_user) }}"
+         class="chat-row" data-room="p{{ req['product_id'] }}_{{ [req['buyer'], req['seller']]|sort|join('_') }}" data-me="{{ current_user }}">
+        <div class="chat-row-img">
+          {% if prod.get('image1') %}
+            <img src="{{ url_for('static', filename='uploads/' + prod['image1']) }}" alt="">
+          {% else %}<span>📦</span>{% endif %}
+        </div>
+        <div class="chat-row-info">
+          <div class="chat-row-name">{{ prod.get('name', 'Unknown Product') }}</div>
+          <div class="chat-row-sub">Seller: {{ req['seller'] }} · ₹ {{ prod.get('price','') }}</div>
+          <div class="chat-row-last" id="last_p{{ req['product_id'] }}_{{ [req['buyer'], req['seller']]|sort|join('_') }}">Loading...</div>
+        </div>
+        <div class="chat-row-right">
+          <span class="chat-unread-badge" id="badge_p{{ req['product_id'] }}_{{ [req['buyer'], req['seller']]|sort|join('_') }}" style="display:none;"></span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ── ACTIVE CHATS AS SELLER ── -->
+    {% if seller_accepted %}
+    <div class="inbox-section">
+      <div class="inbox-section-head">
+        <div class="inbox-section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          Chats on My Listings (Selling)
+        </div>
+      </div>
+      {% for req in seller_accepted %}
+      {% set prod = products_map.get(req['product_id'], {}) %}
+      <a href="{{ url_for('chat_page', product_id=req['product_id'], buyer=req['buyer']) }}"
+         class="chat-row" data-room="p{{ req['product_id'] }}_{{ [req['buyer'], req['seller']]|sort|join('_') }}" data-me="{{ current_user }}">
+        <div class="chat-row-img">
+          {% if prod.get('image1') %}
+            <img src="{{ url_for('static', filename='uploads/' + prod['image1']) }}" alt="">
+          {% else %}<span>📦</span>{% endif %}
+        </div>
+        <div class="chat-row-info">
+          <div class="chat-row-name">{{ prod.get('name', 'Unknown Product') }}</div>
+          <div class="chat-row-sub">Buyer: {{ req['buyer'] }} · ₹ {{ prod.get('price','') }}</div>
+          <div class="chat-row-last" id="last_p{{ req['product_id'] }}_{{ [req['buyer'], req['seller']]|sort|join('_') }}">Loading...</div>
+        </div>
+        <div class="chat-row-right">
+          <span class="chat-unread-badge" id="badge_p{{ req['product_id'] }}_{{ [req['buyer'], req['seller']]|sort|join('_') }}" style="display:none;"></span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if not pending_reqs and not buyer_accepted and not seller_accepted %}
+    <div class="inbox-empty">
+      <span style="font-size:64px; opacity:0.25;">💬</span>
+      <h3>No chats yet</h3>
+      <p>Browse listings and send a chat request to start a conversation.</p>
+      <a href="{{ url_for('explore') }}" class="btn-red" style="margin-top:20px;">Browse Listings</a>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = "{{ SUPABASE_URL }}";
+  const SUPABASE_KEY = "{{ SUPABASE_KEY }}";
+  const CURRENT_USER = "{{ current_user }}";
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // Load last message preview + unread badge for each chat row
+  async function loadPreviews() {
+    const rows = document.querySelectorAll(".chat-row[data-room]");
+    for (const row of rows) {
+      const room    = row.dataset.room;
+      const lastEl  = document.getElementById(`last_${room}`);
+      const badgeEl = document.getElementById(`badge_${room}`);
+      if (!lastEl) continue;
+
+      const { data: msgs } = await sb
+        .from("messages").select("sender,content,created_at")
+        .eq("room_id", room).order("created_at", { ascending: false }).limit(1);
+
+      if (msgs && msgs.length > 0) {
+        const m = msgs[0];
+        lastEl.textContent = (m.sender === CURRENT_USER ? "You: " : "") +
+          m.content.substring(0, 55) + (m.content.length > 55 ? "…" : "");
+      } else {
+        lastEl.textContent = "No messages yet — start the conversation!";
+      }
+
+      if (badgeEl) {
+        const { count } = await sb.from("messages")
+          .select("id", { count: "exact", head: true })
+          .eq("room_id", room).eq("seen", false).neq("sender", CURRENT_USER);
+        if (count && count > 0) {
+          badgeEl.textContent = count;
+          badgeEl.style.display = "inline-flex";
+        }
+      }
+    }
+  }
+
+  // Real-time: update badge when new request arrives
+  sb.channel("inbox_requests")
+    .on("postgres_changes", {
+      event: "INSERT", schema: "public", table: "chat_requests",
+      filter: `seller=eq.${CURRENT_USER}`
+    }, () => { window.location.reload(); })
+    .subscribe();
+
+  loadPreviews();
+</script>
+
+</body>
+</html>

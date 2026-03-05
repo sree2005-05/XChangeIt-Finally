@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Wishlist — XChangeIt</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='slate.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='explore.css') }}">
+</head>
+<body>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="flash-wrap">
+      {% for msg in messages %}<div class="flash-msg">{{ msg }}</div>{% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<nav class="navbar">
+
+  <!-- LEFT SIDE -->
+  <div style="display:flex; align-items:center; gap:10px;">
+
+    <!-- Home Icon -->
+    <a href="{{ url_for('home') }}" class="nav-icon-btn" data-tooltip="Home">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 11L12 3l9 8"></path>
+        <path d="M5 10v10h14V10"></path>
+      </svg>
+    </a>
+
+    <!-- Logo -->
+    <a href="{{ url_for('home') }}" class="logo">XChange<span>It</span></a>
+
+  </div>
+  <div class="nav-right">
+    {% if session.get('user') %}
+      <a href="{{ url_for('cart') }}" class="nav-icon-btn" data-tooltip="Cart">
+        <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      </a>
+      <a href="{{ url_for('wishlist') }}" class="nav-icon-btn" data-tooltip="Wishlist">
+        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      </a>
+      <a href="{{ url_for('my_listings_chat') }}" class="nav-icon-btn" data-tooltip="Chats">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        {% if pending_count and pending_count > 0 %}
+          <span class="nav-badge">{{ pending_count }}</span>
+        {% endif %}
+      </a>
+      <a href="{{ url_for('profile') }}" class="nav-icon-btn nav-profile-btn" data-tooltip="{{ session.get('user') }}">
+        {{ session.get('user')[0]|upper }}
+      </a>
+    {% else %}
+      <a href="{{ url_for('login') }}" class="btn-nav-ghost">Login</a>
+      <a href="{{ url_for('signup') }}" class="btn-nav-fill">Sign Up</a>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <span class="overline">Saved</span>
+    <h1>My Wishlist</h1>
+    <p>Items you've saved for later.</p>
+  </div>
+</div>
+
+<div class="products-section">
+  <div class="products-inner">
+    {% if items %}
+    <div class="products-grid">
+      {% for item in items %}
+      <div class="product-card"
+          onclick="window.location.href=this.dataset.href" data-href="{{ url_for('product_detail', product_id=item['id']) }}"></div>
+        <div class="product-img">
+          {% if item['image1'] %}
+            <img src="{{ url_for('static', filename='uploads/' + item['image1']) }}" alt="{{ item['name'] }}">
+          {% else %}
+            <div class="product-img-placeholder"><span>📦</span></div>
+          {% endif %}
+          <div class="product-badge {% if item['category']=='rent' %}badge-rent{% else %}badge-buy{% endif %}">
+            {{ item['category']|upper if item['category'] else 'BUY' }}
+          </div>
+        </div>
+        <div class="product-body">
+          <h3>{{ item['name'] }}</h3>
+          <p class="product-desc">{{ item['short_desc'] }}</p>
+          <div class="product-footer">
+            <span class="product-price">₹ {{ item['price'] }}</span>
+            <a href="{{ url_for('add_to_cart', product_id=item['id']) }}"
+               class="wishlist-btn"
+               onclick="event.stopPropagation()">+ Cart</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <span class="empty-icon">♡</span>
+      <h3>Your wishlist is empty</h3>
+      <p>Browse listings and save items you like.</p>
+      <a href="{{ url_for('explore') }}" class="btn-red" style="margin-top:20px;">Browse Listings</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-col">
+      <span class="footer-logo">XChange<span>It</span></span>
+      <p class="footer-desc">Verified student marketplace for GEC Palakkad.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Navigation</h4>
+      <ul>
+        <li><a href="{{ url_for('home') }}">Home</a></li>
+        <li><a href="{{ url_for('explore') }}">Explore</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Account</h4>
+      <ul>
+        <li><a href="{{ url_for('cart') }}">My Cart</a></li>
+        <li><a href="{{ url_for('profile') }}">Profile</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Contact</h4>
+      <p><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3d4e484d4d524f497d455e555c535a585449135453">[email&#160;protected]</
+<script>
+  (function() {
+    if (!document.querySelector('.nav-icon-btn[data-tooltip="Chats"]')) return;
+    function refreshBadge() {
+      fetch('/api/pending_count').then(r=>r.json()).then(data=>{
+        const chatLink = document.querySelector('.nav-icon-btn[data-tooltip="Chats"]');
+        if (!chatLink) return;
+        const total = (data.count||0) + (data.accepted_count||0);
+        let b = chatLink.querySelector('.nav-badge');
+        if (total > 0) {
+          if (!b) { b = document.createElement('span'); b.className='nav-badge'; chatLink.appendChild(b); }
+          b.textContent = total; b.style.display = 'inline-flex';
+        } else if (b) { b.style.display = 'none'; }
+      }).catch(()=>{});
+    }
+    refreshBadge();
+    setInterval(refreshBadge, 8000);
+  })();
+</script>
+</body>
+</html>
