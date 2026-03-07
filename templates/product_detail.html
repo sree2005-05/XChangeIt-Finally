@@ -41,15 +41,31 @@
       <a href="{{ url_for('cart') }}" class="nav-icon-btn" data-tooltip="Cart">
         <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
       </a>
-      <a href="{{ url_for('wishlist') }}" class="nav-icon-btn" data-tooltip="Wishlist">
-        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-      </a>
       <a href="{{ url_for('my_listings_chat') }}" class="nav-icon-btn" data-tooltip="Chats">
         <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         {% if pending_count and pending_count > 0 %}
           <span class="nav-badge">{{ pending_count }}</span>
         {% endif %}
       </a>
+      <!-- NOTIFICATION BELL -->
+      <div class="notif-wrap" id="notifWrap">
+        <button class="nav-icon-btn notif-bell-btn" id="notifBell" data-tooltip="Notifications" onclick="toggleNotifPanel(event)" aria-label="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 01-3.46 0"/>
+          </svg>
+          <span class="nav-badge notif-badge" id="notifBadge" style="display:none;"></span>
+        </button>
+        <div class="notif-panel" id="notifPanel" style="display:none;">
+          <div class="notif-panel-header">
+            <span>Notifications</span>
+            <button class="notif-close-btn" onclick="closeNotifPanel()">&#x2715;</button>
+          </div>
+          <div class="notif-list" id="notifList">
+            <div class="notif-loading">Loading&#8230;</div>
+          </div>
+        </div>
+      </div>
       <a href="{{ url_for('profile') }}" class="nav-icon-btn nav-profile-btn" data-tooltip="{{ session.get('user') }}">
         {{ session.get('user')[0]|upper }}
       </a>
@@ -111,33 +127,61 @@
         <a href="{{ url_for('add_to_cart', product_id=product[0]) }}" class="btn-red detail-btn">
           Add to Cart
         </a>
-        <a href="{{ url_for('add_to_wishlist', product_id=product[0]) }}" class="btn-outline-slate detail-btn">
-          ♡ Add to Wishlist
-        </a>
         {% if session.get('user') %}
-          {% if session.get('user') and session.get('user') != product[11] %}
+          {% if session.get('user') != product[11] %}
 
-    {% if chat_status == None %}
-        <a href="{{ url_for('request_chat', product_id=product[0]) }}" class="detail-btn btn-chat">
-        Request Chat
-        </a>
+            {# ── CHAT BUTTON ── #}
+            {% if chat_status == None %}
+              <a href="{{ url_for('request_chat', product_id=product[0]) }}" class="detail-btn btn-chat">
+                💬 Request Chat
+              </a>
+            {% elif chat_status == "pending" %}
+              <button class="detail-btn btn-chat" disabled>💬 Chat Request Sent</button>
+            {% elif chat_status == "accepted" %}
+              <a href="{{ url_for('chat_seller', product_id=product[0]) }}" class="detail-btn btn-chat">
+                💬 Open Chat
+              </a>
+            {% endif %}
 
-    {% elif chat_status == "pending" %}
-        <button class="detail-btn btn-chat" disabled>
-        Request Sent
-        </button>
+            {# ── CONFIRM ORDER BUTTON ── #}
+            {% if order_status == None %}
+              {% if product[5] == 'rent' %}
+                <button class="detail-btn btn-order" onclick="openRentModal()">
+                  🛒 Confirm Order
+                </button>
+              {% else %}
+                <a href="{{ url_for('request_order', product_id=product[0]) }}" class="detail-btn btn-order">
+                  🛒 Confirm Order
+                </a>
+              {% endif %}
+            {% elif order_status == "pending" %}
+              <button class="detail-btn btn-order-pending" disabled>
+                ⏳ Order Request Sent
+              </button>
+            {% elif order_status == "accepted" %}
+              <div class="order-confirmed-box">
+                <span class="order-confirmed-icon">✓</span>
+                <span>Order Confirmed! Check <a href="{{ url_for('my_orders') }}">My Orders</a></span>
+              </div>
+            {% elif order_status == "declined" %}
+              {% if product[5] == 'rent' %}
+                <button class="detail-btn btn-order" onclick="openRentModal()">
+                  🛒 Request Order Again
+                </button>
+              {% else %}
+                <a href="{{ url_for('request_order', product_id=product[0]) }}" class="detail-btn btn-order">
+                  🛒 Request Order Again
+                </a>
+              {% endif %}
+            {% endif %}
 
-    {% elif chat_status == "accepted" %}
-        <a href="{{ url_for('chat_seller', product_id=product[0]) }}" class="detail-btn btn-chat">
-        Open Chat
-        </a>
-
-    {% endif %}
-
-{% endif %}
+          {% endif %}
         {% else %}
           <a href="{{ url_for('login') }}" class="btn-chat detail-btn">
             💬 Login to Chat with Seller
+          </a>
+          <a href="{{ url_for('login') }}" class="detail-btn btn-order">
+            🛒 Login to Order
           </a>
         {% endif %}
       </div>
@@ -184,9 +228,204 @@
     </div>
     <div class="footer-col">
       <h4>Contact</h4>
-      <p><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8dfef8fdfde2fff9cdf5eee5ece3eae8e4f9a3e4e3">[email&#160;protected]</a></p>
+      <p><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="aedddbdedec1dcdaeed6cdc6cfc0c9cbc7da80c7c0">[email&#160;protected]</a></p>
+      <p>GEC Palakkad, Kerala</p>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2026 XChangeIt. All Rights Reserved. · GEC Palakkad</div>
+</footer>
+    
+<!-- ── RENT DATE MODAL ── -->
+<div class="rent-modal-overlay" id="rentModal" onclick="closeRentModal(event)">
+  <div class="rent-modal">
+    <div class="rent-modal-header">
+      <div class="rent-modal-title">Select Rental Dates</div>
+      <div class="rent-modal-sub">Choose the period you'd like to rent <strong>{{ product[1] }}</strong></div>
+    </div>
+    <form method="POST" action="{{ url_for('request_order', product_id=product[0]) }}" class="rent-modal-form">
+      <div class="rent-date-row">
+        <div class="rent-date-group">
+          <label>From</label>
+          <input type="date" name="rent_from" id="rentFrom" required
+                 min="{{ today }}" onchange="validateDates()">
+        </div>
+        <div class="rent-date-arrow">→</div>
+        <div class="rent-date-group">
+          <label>To</label>
+          <input type="date" name="rent_to" id="rentTo" required
+                 min="{{ today }}" onchange="validateDates()">
+        </div>
+      </div>
+      <div class="rent-duration-display" id="rentDuration" style="display:none;">
+        <span class="rent-dur-icon">📅</span>
+        <span id="rentDurationText"></span>
+      </div>
+      <div class="rent-modal-actions">
+        <button type="button" class="rent-cancel-btn" onclick="closeRentModalDirect()">Cancel</button>
+        <button type="submit" class="rent-confirm-btn" id="rentSubmitBtn">
+          Send Order Request →
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ── ORDER BUTTON STYLES ── */
+.btn-order {
+  display: block; text-align: center;
+  padding: 15px 28px; font-size: 13px; border-radius: 3px;
+  font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  font-family: 'Raleway', sans-serif;
+  background: #2c3e50; color: #fff; border: none; cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn-order:hover { opacity: 0.86; }
+.btn-order-pending {
+  display: block; text-align: center;
+  padding: 15px 28px; font-size: 13px; border-radius: 3px;
+  font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  font-family: 'Raleway', sans-serif;
+  background: #f4f6f9; color: #95a5a6; border: 1.5px solid #e5eaef; cursor: not-allowed;
+  width: 100%;
+}
+.order-confirmed-box {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px; background: rgba(39,174,96,0.08);
+  border: 1.5px solid rgba(39,174,96,0.3); border-radius: 3px;
+  font-size: 13px; font-weight: 600; color: #27ae60;
+}
+.order-confirmed-icon {
+  width: 24px; height: 24px; background: #27ae60; color: #fff;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.order-confirmed-box a { color: #27ae60; text-decoration: underline; }
+
+/* ── RENT MODAL ── */
+.rent-modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55); z-index: 9998;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.rent-modal-overlay.active { display: flex; }
+.rent-modal {
+  background: #fff; border-radius: 8px;
+  width: 100%; max-width: 480px; margin: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  overflow: hidden;
+  animation: modalIn 0.2s ease;
+}
+@keyframes modalIn {
+  from { opacity:0; transform: translateY(12px) scale(0.97); }
+  to   { opacity:1; transform: translateY(0) scale(1); }
+}
+.rent-modal-header {
+  background: #2c3e50; padding: 28px 28px 24px;
+  border-bottom: 3px solid #e74c3c;
+}
+.rent-modal-title {
+  font-family: 'IBM Plex Serif', serif;
+  font-size: 22px; color: #fff; font-weight: 600; margin-bottom: 6px;
+}
+.rent-modal-sub { color: rgba(255,255,255,0.5); font-size: 13px; }
+.rent-modal-sub strong { color: rgba(255,255,255,0.8); }
+.rent-modal-form { padding: 28px; }
+.rent-date-row {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+}
+.rent-date-group { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+.rent-date-group label {
+  font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase; color: #2c3e50;
+}
+.rent-date-group input[type="date"] {
+  padding: 12px 14px; border: 1.5px solid #dde2e8; border-radius: 3px;
+  font-size: 14px; font-family: 'Raleway', sans-serif; color: #2c3e50;
+  outline: none; transition: border-color 0.2s;
+  background: #f4f6f9; width: 100%;
+}
+.rent-date-group input:focus { border-color: #2c3e50; background: #fff; }
+.rent-date-arrow { color: #bdc3c7; font-size: 18px; flex-shrink: 0; margin-top: 22px; }
+.rent-duration-display {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; background: rgba(44,62,80,0.04);
+  border: 1px solid #e5eaef; border-radius: 4px;
+  font-size: 13px; font-weight: 600; color: #2c3e50;
+  margin-bottom: 20px;
+}
+.rent-dur-icon { font-size: 16px; }
+.rent-modal-actions { display: flex; gap: 10px; }
+.rent-cancel-btn {
+  flex: 1; padding: 13px; background: transparent;
+  border: 1.5px solid #e5eaef; border-radius: 3px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
+  color: #95a5a6; cursor: pointer; font-family: 'Raleway', sans-serif;
+  transition: all 0.2s;
+}
+.rent-cancel-btn:hover { border-color: #2c3e50; color: #2c3e50; }
+.rent-confirm-btn {
+  flex: 2; padding: 13px; background: #e74c3c;
+  border: none; border-radius: 3px; color: #fff;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.5px;
+  text-transform: uppercase; cursor: pointer;
+  font-family: 'Raleway', sans-serif; transition: opacity 0.2s;
+}
+.rent-confirm-btn:hover { opacity: 0.88; }
+.rent-confirm-btn:disabled { background: #bdc3c7; cursor: not-allowed; opacity: 1; }
+
+</style>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ── RENT MODAL ──
+function openRentModal() {
+  document.getElementById('rentModal').classList.add('active');
+  // Set min date to today
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('rentFrom').min = today;
+  document.getElementById('rentTo').min = today;
+}
+function closeRentModal(e) {
+  if (e.target === document.getElementById('rentModal')) {
+    document.getElementById('rentModal').classList.remove('active');
+  }
+}
+function closeRentModalDirect() {
+  document.getElementById('rentModal').classList.remove('active');
+}
+function validateDates() {
+  const from = document.getElementById('rentFrom').value;
+  const to   = document.getElementById('rentTo').value;
+  const durEl = document.getElementById('rentDuration');
+  const durText = document.getElementById('rentDurationText');
+  const submitBtn = document.getElementById('rentSubmitBtn');
+
+  if (from) {
+    document.getElementById('rentTo').min = from;
+  }
+  if (from && to && to >= from) {
+    const fromD = new Date(from);
+    const toD   = new Date(to);
+    const days  = Math.round((toD - fromD) / (1000 * 60 * 60 * 24)) + 1;
+    durText.textContent = `${days} day${days !== 1 ? 's' : ''} — ${formatDate(from)} to ${formatDate(to)}`;
+    durEl.style.display = 'flex';
+    submitBtn.disabled = false;
+  } else if (to && from && to < from) {
+    durText.textContent = 'End date must be after start date';
+    durEl.style.display = 'flex';
+    submitBtn.disabled = true;
+  } else {
+    durEl.style.display = 'none';
+    submitBtn.disabled = !from || !to;
+  }
+}
+function formatDate(dateStr) {
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+}
+</script>
+
 <script>
   (function() {
     if (!document.querySelector('.nav-icon-btn[data-tooltip="Chats"]')) return;
@@ -233,13 +472,14 @@
             toast.innerHTML = '✓ Seller accepted your request! <u>Open Chat →</u>';
             toast.onclick = () => window.location.href = '/chat_seller/' + payload.new.product_id;
             document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 6000);
-            refreshBadge();
+            setTimeout(() => { toast.remove(); }, 5000);
           }
         })
         .subscribe();
     }
   })();
 </script>
+
+  <script src="{{ url_for('static', filename='notifications.js') }}"></script>
 </body>
 </html>

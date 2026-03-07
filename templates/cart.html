@@ -3,37 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your Cart — XChangeIt</title>
+  <title>My Cart — XChangeIt</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='slate.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='cart.css') }}">
 </head>
 <body>
-{% with messages = get_flashed_messages() %}{% if messages %}<div class="flash-wrap">{% for msg in messages %}<div class="flash-msg">{{ msg }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="flash-wrap">
+      {% for msg in messages %}<div class="flash-msg">{{ msg }}</div>{% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
 
 <nav class="navbar">
-
-  <!-- LEFT SIDE -->
   <div style="display:flex; align-items:center; gap:10px;">
-
-    <!-- Home Icon -->
     <a href="{{ url_for('home') }}" class="nav-icon-btn" data-tooltip="Home">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M3 11L12 3l9 8"></path>
-        <path d="M5 10v10h14V10"></path>
+        <path d="M3 11L12 3l9 8"/><path d="M5 10v10h14V10"/>
       </svg>
     </a>
-
-    <!-- Logo -->
     <a href="{{ url_for('home') }}" class="logo">XChange<span>It</span></a>
-
   </div>
   <div class="nav-right">
     {% if session.get('user') %}
-      <a href="{{ url_for('cart') }}" class="nav-icon-btn" data-tooltip="Cart">
+      <a href="{{ url_for('cart') }}" class="nav-icon-btn active" data-tooltip="Cart">
         <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-      </a>
-      <a href="{{ url_for('wishlist') }}" class="nav-icon-btn" data-tooltip="Wishlist">
-        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
       </a>
       <a href="{{ url_for('my_listings_chat') }}" class="nav-icon-btn" data-tooltip="Chats">
         <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
@@ -41,6 +37,25 @@
           <span class="nav-badge">{{ pending_count }}</span>
         {% endif %}
       </a>
+      <!-- NOTIFICATION BELL -->
+      <div class="notif-wrap" id="notifWrap">
+        <button class="nav-icon-btn notif-bell-btn" id="notifBell" data-tooltip="Notifications" onclick="toggleNotifPanel(event)" aria-label="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 01-3.46 0"/>
+          </svg>
+          <span class="nav-badge notif-badge" id="notifBadge" style="display:none;"></span>
+        </button>
+        <div class="notif-panel" id="notifPanel" style="display:none;">
+          <div class="notif-panel-header">
+            <span>Notifications</span>
+            <button class="notif-close-btn" onclick="closeNotifPanel()">&#x2715;</button>
+          </div>
+          <div class="notif-list" id="notifList">
+            <div class="notif-loading">Loading&#8230;</div>
+          </div>
+        </div>
+      </div>
       <a href="{{ url_for('profile') }}" class="nav-icon-btn nav-profile-btn" data-tooltip="{{ session.get('user') }}">
         {{ session.get('user')[0]|upper }}
       </a>
@@ -50,11 +65,12 @@
   </div>
 </nav>
 
-<div class="page-header">
-  <div class="page-header-inner">
-    <span class="overline">Shopping</span>
-    <h1>Your Cart</h1>
-    <p>Review your selected items before checking out.</p>
+<!-- PAGE HEADER -->
+<div class="cart-hero">
+  <div class="cart-hero-inner">
+    <span class="overline">My Account</span>
+    <h1>My Cart</h1>
+    <p>Items you've saved — contact sellers directly to arrange a deal.</p>
   </div>
 </div>
 
@@ -62,66 +78,87 @@
   <div class="cart-inner">
 
     {% if items %}
-    <div class="cart-layout">
 
-      <!-- ITEMS LIST -->
-      <div class="cart-items">
-        <div class="cart-items-header">
-          <span>Item</span>
-          <span>Price</span>
-        </div>
-        {% for item in items %}
-        <div class="cart-item">
-          <div class="cart-item-img">
-            {% if item['image1'] %}
-              <img src="{{ url_for('static', filename='uploads/' + item['image1']) }}" alt="{{ item['name'] }}">
-            {% else %}
-              <div class="cart-img-placeholder">📦</div>
-            {% endif %}
-          </div>
-          <div class="cart-item-info">
-            <h3>{{ item['name'] }}</h3>
-            <span class="cart-item-id">Product #{{ item['id'] }}</span>
-          </div>
-          <div class="cart-item-price">₹ {{ item['price'] }}</div>
-        </div>
-        {% endfor %}
-      </div>
+    <!-- COUNT BAR -->
+    <div class="cart-topbar">
+      <span class="cart-count-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+        {{ items|length }} saved item{% if items|length != 1 %}s{% endif %}
+      </span>
+      <a href="{{ url_for('explore') }}" class="cart-browse-link">+ Browse More</a>
+    </div>
 
-      <!-- SUMMARY -->
-      <div class="cart-summary">
-        <div class="summary-title">Order Summary</div>
-        <div class="summary-row">
-          <span>Subtotal ({{ items|length }} item{% if items|length != 1 %}s{% endif %})</span>
-          <span>₹ {{ total }}</span>
-        </div>
-        <div class="summary-row">
-          <span>Platform Fee</span>
-          <span class="free-tag">Free</span>
-        </div>
-        <div class="summary-divider"></div>
-        <div class="summary-total">
-          <span>Total</span>
-          <span>₹ {{ total }}</span>
-        </div>
-        <a href="#" class="btn-red" style="display:block; text-align:center; margin-top:24px; padding:15px;">
-          Proceed to Checkout
+    <!-- ITEMS GRID -->
+    <div class="cart-grid">
+      {% for item in items %}
+      <div class="cart-card">
+
+        <!-- IMAGE -->
+        <a href="{{ url_for('product_detail', product_id=item['id']) }}" class="cart-card-img-wrap">
+          {% if item['image1'] %}
+            <img src="{{ url_for('static', filename='uploads/' + item['image1']) }}" alt="{{ item['name'] }}">
+          {% else %}
+            <div class="cart-card-placeholder">📦</div>
+          {% endif %}
         </a>
-        <a href="{{ url_for('explore') }}" class="btn-continue">← Continue Shopping</a>
-        <div class="summary-trust">
-          <span>✓ Secure · Student-to-Student · Campus Only</span>
-        </div>
-      </div>
 
+        <!-- BODY -->
+        <div class="cart-card-body">
+          <a href="{{ url_for('product_detail', product_id=item['id']) }}" class="cart-card-name">
+            {{ item['name'] }}
+          </a>
+          <div class="cart-card-price">₹ {{ item['price'] }}</div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="cart-card-actions">
+          <a href="{{ url_for('request_chat', product_id=item['id']) }}" class="cart-chat-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+            </svg>
+            Chat with Seller
+          </a>
+          <a href="{{ url_for('remove_from_cart', product_id=item['id']) }}"
+             class="cart-remove-btn"
+             onclick="return confirm('Remove from cart?')"
+             title="Remove">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+            </svg>
+          </a>
+        </div>
+
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- BOTTOM BAR -->
+    <div class="cart-bottombar">
+      <a href="{{ url_for('explore') }}" class="cart-continue-link">← Continue Browsing</a>
+      <div class="cart-hint">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        Payments are handled directly between students on campus
+      </div>
     </div>
 
     {% else %}
+
+    <!-- EMPTY STATE -->
     <div class="cart-empty">
-      <span class="empty-icon">🛒</span>
+      <div class="cart-empty-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" width="64" height="64" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+      </div>
       <h3>Your cart is empty</h3>
-      <p>Browse listings and add items you like.</p>
-      <a href="{{ url_for('explore') }}" class="btn-red" style="margin-top:24px;">Browse Listings</a>
+      <p>Browse listings and click "+ Cart" to save items you're interested in.</p>
+      <a href="{{ url_for('explore') }}" class="btn-red" style="margin-top:28px; display:inline-block;">Browse Listings</a>
     </div>
+
     {% endif %}
 
   </div>
@@ -131,5 +168,12 @@
   <div class="footer-grid">
     <div class="footer-col"><span class="footer-logo">XChange<span>It</span></span><p class="footer-desc">Verified student marketplace for GEC Palakkad.</p></div>
     <div class="footer-col"><h4>Navigation</h4><ul><li><a href="{{ url_for('home') }}">Home</a></li><li><a href="{{ url_for('explore') }}">Explore</a></li></ul></div>
-    <div class="footer-col"><h4>Account</h4><ul><li><a href="{{ url_for('login') }}">Login</a></li><li><a href="{{ url_for('sell') }}">Sell / Rent</a></li></ul></div>
-    <div class="footer-col"><h4>Contact</h4><p><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e5969095958a9791a59d868d848b82808c91cb8c8b">[email&#160;protected]</a>
+    <div class="footer-col"><h4>Account</h4><ul><li><a href="{{ url_for('profile') }}">Profile</a></li><li><a href="{{ url_for('sell') }}">Sell / Rent</a></li></ul></div>
+    <div class="footer-col"><h4>Contact</h4><p><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="98ebede8e8f7eaecd8e0fbf0f9f6fffdf1ecb6f1f6">[email&#160;protected]</a></p><p>GEC Palakkad, Kerala</p></div>
+  <
+</div>
+</footer>
+
+  <script src="{{ url_for('static', filename='notifications.js') }}"></script>
+</body>
+</html>

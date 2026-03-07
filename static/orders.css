@@ -1,0 +1,153 @@
+/* ── ORDERS HERO ── */
+.orders-hero {
+  background: #2c3e50;
+  padding: 40px 48px 36px;
+  border-bottom: 3px solid #e74c3c;
+}
+.orders-hero-inner { max-width: 1000px; margin: 0 auto; }
+.orders-hero h1 {
+  font-family: 'IBM Plex Serif', serif;
+  font-size: 36px; color: #fff; font-weight: 600; margin-bottom: 8px;
+}
+.orders-hero p { color: rgba(255,255,255,0.5); font-size: 15px; }
+
+/* ── PAGE LAYOUT ── */
+.orders-page { padding: 40px 48px 80px; }
+.orders-inner { max-width: 1000px; margin: 0 auto; }
+
+/* ── FILTER TABS ── */
+.orders-filter {
+  display: flex; gap: 0;
+  background: #fff; border: 1px solid #e5eaef;
+  border-radius: 6px; overflow: hidden; margin-bottom: 28px;
+}
+.orders-tab {
+  flex: 1; padding: 13px 20px; text-align: center;
+  font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase; color: #95a5a6;
+  border-right: 1px solid #e5eaef;
+  transition: all 0.2s;
+}
+.orders-tab:last-child { border-right: none; }
+.orders-tab:hover { color: #2c3e50; background: #f4f6f9; }
+.orders-tab.active { background: #2c3e50; color: #fff; }
+
+/* ── ORDERS LIST ── */
+.orders-list { display: flex; flex-direction: column; gap: 14px; }
+
+/* ── ORDER CARD ── */
+.order-card {
+  background: #fff; border: 1px solid #e5eaef;
+  border-radius: 6px; padding: 22px 24px;
+  display: flex; align-items: center; gap: 20px;
+  border-left: 4px solid #e5eaef;
+  transition: box-shadow 0.2s;
+}
+.order-card:hover { box-shadow: 0 4px 16px rgba(44,62,80,0.08); }
+.order-card.status-pending  { border-left-color: #f39c12; }
+.order-card.status-accepted { border-left-color: #27ae60; }
+.order-card.status-declined { border-left-color: #e74c3c; }
+
+.order-img {
+  width: 72px; height: 72px;
+  border-radius: 6px; background: #f4f6f9;
+  overflow: hidden; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 28px;
+}
+.order-img img { width: 100%; height: 100%; object-fit: cover; }
+
+.order-info { flex: 1; min-width: 0; }
+.order-product-name {
+  font-family: 'IBM Plex Serif', serif;
+  font-size: 17px; font-weight: 600; color: #2c3e50; margin-bottom: 8px;
+}
+.order-meta-row {
+  display: flex; align-items: center; gap: 12px;
+  flex-wrap: wrap; margin-bottom: 8px;
+}
+.order-type-badge {
+  padding: 3px 9px; font-size: 10px; font-weight: 700;
+  letter-spacing: 1px; border-radius: 2px;
+}
+.type-buy  { background: #2c3e50; color: #fff; }
+.type-rent { background: #e74c3c; color: #fff; }
+.order-seller { font-size: 12px; color: #95a5a6; font-weight: 500; }
+.order-seller strong { color: #555e6d; }
+.order-price {
+  font-family: 'IBM Plex Serif', serif;
+  font-size: 15px; font-weight: 700; color: #2c3e50;
+}
+
+.order-dates {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12px; color: #555e6d; font-weight: 600;
+  margin-bottom: 6px;
+  padding: 7px 12px; background: #f4f6f9;
+  border-radius: 3px; width: fit-content;
+}
+.rent-days-badge {
+  background: rgba(231,76,60,0.1); color: #e74c3c;
+  font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 10px;
+}
+
+.order-requested { font-size: 11px; color: #bdc3c7; font-weight: 500; }
+
+.order-right {
+  display: flex; flex-direction: column;
+  align-items: flex-end; gap: 8px; flex-shrink: 0;
+}
+
+/* ── STATUS BADGES ── */
+.order-status {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
+  text-transform: uppercase; padding: 6px 12px;
+  border-radius: 20px;
+}
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50; flex-shrink: 0;
+}
+.status-pending  { background: rgba(243,156,18,0.1);  color: #e67e22; }
+.status-pending  .status-dot { background: #f39c12; border-radius: 50%; }
+.status-accepted { background: rgba(39,174,96,0.1);   color: #27ae60; }
+.status-accepted .status-dot { background: #27ae60; border-radius: 50%; }
+.status-declined { background: rgba(231,76,60,0.08);  color: #e74c3c; }
+.status-declined .status-dot { background: #e74c3c; border-radius: 50%; }
+
+.order-confirmed-msg {
+  font-size: 11px; color: #27ae60; font-weight: 600;
+  max-width: 160px; text-align: right; line-height: 1.4;
+}
+.order-retry-btn {
+  font-size: 11px; font-weight: 700; color: #e74c3c;
+  letter-spacing: 0.5px; transition: opacity 0.2s;
+}
+.order-retry-btn:hover { opacity: 0.75; }
+.order-view-link {
+  font-size: 11px; font-weight: 700; color: #95a5a6;
+  letter-spacing: 0.3px; transition: color 0.2s;
+}
+.order-view-link:hover { color: #2c3e50; }
+
+/* ── EMPTY STATE ── */
+.orders-empty {
+  text-align: center; padding: 100px 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.orders-empty-icon { font-size: 72px; opacity: 0.2; }
+.orders-empty h3 {
+  font-family: 'IBM Plex Serif', serif;
+  font-size: 24px; color: #2c3e50;
+}
+.orders-empty p { color: #95a5a6; font-size: 15px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .orders-page { padding: 24px 20px 60px; }
+  .orders-hero { padding: 30px 20px; }
+  .order-card { flex-wrap: wrap; }
+  .order-right { width: 100%; flex-direction: row; align-items: center; justify-content: space-between; }
+  .orders-filter { flex-wrap: wrap; }
+  .orders-tab { flex: none; flex-basis: 50%; border-bottom: 1px solid #e5eaef; }
+}

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Reviews — XChangeIt</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='slate.css') }}">
+</head>
+<body>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="flash-wrap">
+      {% for msg in messages %}<div class="flash-msg">{{ msg }}</div>{% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<nav class="navbar">
+  <div style="display:flex; align-items:center; gap:10px;">
+    <a href="{{ url_for('home') }}" class="nav-icon-btn" data-tooltip="Home">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 11L12 3l9 8"/><path d="M5 10v10h14V10"/>
+      </svg>
+    </a>
+    <a href="{{ url_for('home') }}" class="logo">XChange<span>It</span></a>
+  </div>
+  <div class="nav-right">
+    <a href="{{ url_for('cart') }}" class="nav-icon-btn" data-tooltip="Cart">
+      <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    </a>
+    <a href="{{ url_for('my_listings_chat') }}" class="nav-icon-btn" data-tooltip="Chats">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      {% if pending_count and pending_count > 0 %}
+        <span class="nav-badge">{{ pending_count }}</span>
+      {% endif %}
+    </a>
+      <!-- NOTIFICATION BELL -->
+      <div class="notif-wrap" id="notifWrap">
+        <button class="nav-icon-btn notif-bell-btn" id="notifBell" data-tooltip="Notifications" onclick="toggleNotifPanel(event)" aria-label="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 01-3.46 0"/>
+          </svg>
+          <span class="nav-badge notif-badge" id="notifBadge" style="display:none;"></span>
+        </button>
+        <div class="notif-panel" id="notifPanel" style="display:none;">
+          <div class="notif-panel-header">
+            <span>Notifications</span>
+            <button class="notif-close-btn" onclick="closeNotifPanel()">&#x2715;</button>
+          </div>
+          <div class="notif-list" id="notifList">
+            <div class="notif-loading">Loading&#8230;</div>
+          </div>
+        </div>
+      </div>
+
+    <a href="{{ url_for('profile') }}" class="nav-icon-btn nav-profile-btn" data-tooltip="{{ current_user }}">
+      {{ current_user[0]|upper }}
+    </a>
+  </div>
+</nav>
+
+<!-- PAGE HEADER -->
+<div style="background:#2c3e50; padding:40px 48px 36px; border-bottom:3px solid #e74c3c;">
+  <div style="max-width:800px; margin:0 auto;">
+    <span class="overline">My Account</span>
+    <h1 style="font-family:'IBM Plex Serif',serif; font-size:36px; color:#fff; font-weight:600; margin-bottom:8px;">My Reviews</h1>
+    <p style="color:rgba(255,255,255,0.5); font-size:15px;">Reviews you've posted on XChangeIt.</p>
+  </div>
+</div>
+
+<div style="padding:40px 48px 80px;">
+  <div style="max-width:800px; margin:0 auto;">
+
+    {% if reviews %}
+
+    <!-- REVIEW COUNT + ADD BUTTON -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+      <span style="font-size:13px; color:#95a5a6; font-weight:600;">
+        {{ reviews|length }} review{% if reviews|length != 1 %}s{% endif %} posted
+      </span>
+      <a href="{{ url_for('add_review') }}" class="btn-red" style="font-size:11px; padding:9px 20px;">+ Add Review</a>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      {% for review in reviews %}
+      <div style="background:#fff; border:1px solid #e5eaef; border-radius:6px; padding:24px 28px; border-left:4px solid #e74c3c;">
+
+        <!-- TOP ROW -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid #f0f2f5;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; background:#2c3e50; color:#fff; border-radius:4px;
+                        font-family:'IBM Plex Serif',serif; font-size:17px; font-weight:700;
+                        display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              {{ current_user[0]|upper }}
+            </div>
+            <div>
+              <div style="font-size:15px; font-weight:700; color:#2c3e50;">{{ current_user }}</div>
+              <div style="font-size:12px; color:#95a5a6; margin-top:2px;">{{ review['year'] }}</div>
+            </div>
+          </div>
+          <!-- DELETE BUTTON -->
+          <a href="{{ url_for('delete_review', review_id=review['id']) }}"
+             onclick="return confirm('Delete this review?')"
+             style="padding:6px 14px; border:1.5px solid #e5eaef; border-radius:3px;
+                    font-size:11px; font-weight:700; color:#bdc3c7; transition:all 0.2s;"
+             onmouseover="this.style.borderColor='#e74c3c'; this.style.color='#e74c3c';"
+             onmouseout="this.style.borderColor='#e5eaef'; this.style.color='#bdc3c7';">
+            ✕ Delete
+          </a>
+        </div>
+
+        <!-- REVIEW TEXT -->
+        <p style="color:#555e6d; font-size:15px; line-height:1.75; font-style:italic;
+                  font-family:'IBM Plex Serif',serif; margin:0;">
+          "{{ review['message'] }}"
+        </p>
+
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+
+    <!-- EMPTY STATE -->
+    <div style="text-align:center; padding:100px 20px; display:flex; flex-direction:column; align-items:center; gap:14px;">
+      <span style="font-size:72px; opacity:0.2;">💬</span>
+      <h3 style="font-family:'IBM Plex Serif',serif; font-size:24px; color:#2c3e50;">No reviews yet</h3>
+      <p style="color:#95a5a6; font-size:15px;">Share your experience with XChangeIt to help fellow students.</p>
+      <a href="{{ url_for('add_review') }}" class="btn-red" style="margin-top:10px;">Write a Review</a>
+    </div>
+
+    {% endif %}
+
+    <div style="margin-top:32px; text-align:center;">
+      <a href="{{ url_for('profile') }}" style="font-size:13px; font-weight:700; color:#95a5a6;">← Back to Profile</a>
+    </div>
+
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-col"><span class="footer-logo">XChange<span>It</span></span><p class="footer-desc">Verified student marketplace for GEC Palakkad.</p></div>
+    <div class="footer-col"><h4>Navigation</h4><ul><li><a href="{{ url_for('home') }}">Home</a></li><li><a href="{{ url_for('explore') }}">Explore</a></li></ul></div>
+    <div class="footer-col"><h4>Account</h4><ul><li><a href="{{ url_for('profile') }}">Profile</a></li><li><a href="{{ url_for('logout') }}">Logout</a></li></ul></div>
+    <div class="footer-col"><h4>Contact</h4><p><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="fe8d8b8e8e918c8abe869d969f90999b978ad09790">[email&#160;protected]</a></p><p>GEC Palakkad, Kerala</p></div>
+  </div>
+</div>
+</footer>
+
+  <script src="{{ url_for('static', filename='notifications.js') }}"></script>
+</body>
+</html>

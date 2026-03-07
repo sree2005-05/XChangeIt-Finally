@@ -71,8 +71,16 @@ def init_db():
     c.execute('''CREATE TABLE IF NOT EXISTS wishlist (
         id INTEGER PRIMARY KEY AUTOINCREMENT, user TEXT, product_id INTEGER
     )''')
-    c.execute('''CREATE TABLE IF NOT EXISTS cart (
-        id INTEGER PRIMARY KEY AUTOINCREMENT, user TEXT, product_id INTEGER
+    c.execute('''CREATE TABLE IF NOT EXISTS order_requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER NOT NULL,
+        buyer TEXT NOT NULL,
+        seller TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        rent_from TEXT,
+        rent_to TEXT,
+        rent_days INTEGER,
+        created_at TEXT DEFAULT (datetime('now'))
     )''')
     conn.commit()
     conn.close()
@@ -108,9 +116,26 @@ def insert_sample_products():
 def get_pending_count(username):
     if not username:
         return 0
-    data = sb_get("chat_requests",
-                  f"seller=eq.{username}&status=eq.pending&select=id")
-    return len(data) if isinstance(data, list) else 0
+    chat_pending = sb_get("chat_requests",
+                          f"seller=eq.{username}&status=eq.pending&select=id")
+    chat_count = len(chat_pending) if isinstance(chat_pending, list) else 0
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM order_requests WHERE seller=? AND status='pending'", (username,))
+    order_count = c.fetchone()[0]
+    conn.close()
+    return chat_count + order_count
+
+
+def get_order_pending_count(username):
+    if not username:
+        return 0
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM order_requests WHERE seller=? AND status='pending'", (username,))
+    count = c.fetchone()[0]
+    conn.close()
+    return count
 
 
 # ── helper: enrich request list with product info from SQLite ──
@@ -171,15 +196,30 @@ def product_detail(product_id):
         return redirect(url_for("explore"))
 
     chat_status = None
+    order_status = None
     if session.get("user") and session["user"] != product[11]:
         reqs = sb_get("chat_requests",
                       f"product_id=eq.{product_id}&buyer=eq.{session['user']}&select=status")
         if reqs and len(reqs) > 0:
             chat_status = reqs[0]["status"]
 
+        conn2 = sqlite3.connect(DATABASE)
+        conn2.row_factory = sqlite3.Row
+        c2 = conn2.cursor()
+        c2.execute("SELECT status FROM order_requests WHERE product_id=? AND buyer=? ORDER BY created_at DESC LIMIT 1",
+                   (product_id, session["user"]))
+        orow = c2.fetchone()
+        conn2.close()
+        if orow:
+            order_status = orow["status"]
+
+    from datetime import date
     pending = get_pending_count(session.get("user"))
     return render_template("product_detail.html", product=product,
-                           chat_status=chat_status, pending_count=pending)
+                           chat_status=chat_status, order_status=order_status,
+                           today=date.today().isoformat(),
+                           pending_count=pending,
+                           SUPABASE_URL=SUPABASE_URL, SUPABASE_KEY=SUPABASE_KEY)
 
 
 # ---------------- SIGNUP ----------------
@@ -266,45 +306,6 @@ def add_review():
     return render_template("review.html")
 
 
-# ---------------- WISHLIST ----------------
-@app.route("/add_to_wishlist/<int:product_id>")
-def add_to_wishlist(product_id):
-    if not session.get("user"):
-        flash("Please log in to wishlist items.")
-        return redirect(url_for("login"))
-    conn = sqlite3.connect(DATABASE)
-    c = conn.cursor()
-    c.execute("SELECT id FROM wishlist WHERE user=? AND product_id=?",
-              (session["user"], product_id))
-    if not c.fetchone():
-        c.execute("INSERT INTO wishlist (user, product_id) VALUES (?, ?)",
-                  (session["user"], product_id))
-        conn.commit()
-        flash("Added to wishlist!")
-    else:
-        flash("Already in your wishlist.")
-    conn.close()
-    return redirect(url_for("product_detail", product_id=product_id))
-
-
-@app.route("/wishlist")
-def wishlist():
-    if not session.get("user"):
-        flash("Please log in to view your wishlist.")
-        return redirect(url_for("login"))
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
-    c.execute("""SELECT products.id, products.name, products.price, products.short_desc,
-               products.category, products.image1
-               FROM wishlist JOIN products ON wishlist.product_id = products.id
-               WHERE wishlist.user=? ORDER BY wishlist.id DESC""", (session["user"],))
-    items = c.fetchall()
-    conn.close()
-    pending = get_pending_count(session.get("user"))
-    return render_template("wishlist.html", items=items, pending_count=pending)
-
-
 # ---------------- CART ----------------
 @app.route("/add_to_cart/<int:product_id>")
 def add_to_cart(product_id):
@@ -334,14 +335,14 @@ def cart():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    c.execute("""SELECT products.id, products.name, products.price, products.image1
+    c.execute("""SELECT products.id, products.name, products.price, products.image1,
+                        products.category, products.seller
                FROM cart JOIN products ON cart.product_id = products.id
                WHERE cart.user=? ORDER BY cart.id DESC""", (session["user"],))
     items = c.fetchall()
     conn.close()
-    total = sum(item["price"] for item in items)
     pending = get_pending_count(session.get("user"))
-    return render_template("cart.html", items=items, total=total, pending_count=pending)
+    return render_template("cart.html", items=items, pending_count=pending)
 
 
 @app.route("/remove_from_cart/<int:product_id>")
@@ -641,6 +642,94 @@ def api_pending_count():
     return jsonify({"count": pending, "accepted_count": accepted_count})
 
 
+
+@app.route("/api/notifications")
+def api_notifications():
+    if not session.get("user"):
+        return jsonify({"notifications": [], "total": 0})
+    user = session["user"]
+    notifs = []
+
+    # 1. Order requests received as SELLER (pending)
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("""SELECT o.id, o.buyer, o.product_id, o.created_at, p.name as product_name
+                 FROM order_requests o
+                 JOIN products p ON o.product_id = p.id
+                 WHERE o.seller=? AND o.status='pending'
+                 ORDER BY o.created_at DESC LIMIT 10""", (user,))
+    for r in c.fetchall():
+        notifs.append({
+            "type": "order_received",
+            "icon": "package",
+            "text": f"{r['buyer']} wants to buy {r['product_name']}",
+            "link": "/order_requests",
+            "time": r["created_at"][:16] if r["created_at"] else ""
+        })
+
+    # 2. Your orders ACCEPTED by seller
+    c.execute("""SELECT o.id, o.seller, o.product_id, o.created_at, p.name as product_name
+                 FROM order_requests o
+                 JOIN products p ON o.product_id = p.id
+                 WHERE o.buyer=? AND o.status='accepted'
+                 ORDER BY o.created_at DESC LIMIT 10""", (user,))
+    for r in c.fetchall():
+        notifs.append({
+            "type": "order_accepted",
+            "icon": "check",
+            "text": f"Your order for {r['product_name']} was accepted by {r['seller']}",
+            "link": "/my_orders",
+            "time": r["created_at"][:16] if r["created_at"] else ""
+        })
+
+    # 3. Your orders DECLINED
+    c.execute("""SELECT o.id, o.seller, o.product_id, o.created_at, p.name as product_name
+                 FROM order_requests o
+                 JOIN products p ON o.product_id = p.id
+                 WHERE o.buyer=? AND o.status='declined'
+                 ORDER BY o.created_at DESC LIMIT 10""", (user,))
+    for r in c.fetchall():
+        notifs.append({
+            "type": "order_declined",
+            "icon": "x",
+            "text": f"Your order for {r['product_name']} was declined",
+            "link": "/my_orders",
+            "time": r["created_at"][:16] if r["created_at"] else ""
+        })
+    conn.close()
+
+    # 4. Chat requests received as SELLER (pending)
+    chat_pending = sb_get("chat_requests",
+                          f"seller=eq.{user}&status=eq.pending&select=id,buyer,product_id,created_at")
+    if isinstance(chat_pending, list):
+        for r in chat_pending[:10]:
+            notifs.append({
+                "type": "chat_received",
+                "icon": "chat",
+                "text": f"{r.get('buyer','')} wants to chat about your listing",
+                "link": "/order_requests",
+                "time": (r.get("created_at") or "")[:16]
+            })
+
+    # 5. Chat requests sent — ACCEPTED
+    chat_accepted = sb_get("chat_requests",
+                           f"buyer=eq.{user}&status=eq.accepted&select=id,seller,product_id,created_at")
+    if isinstance(chat_accepted, list):
+        for r in chat_accepted[:10]:
+            notifs.append({
+                "type": "chat_accepted",
+                "icon": "green",
+                "text": "Your chat request was accepted — seller is ready to talk",
+                "link": f"/chat_seller/{r.get('product_id','')}",
+                "time": (r.get("created_at") or "")[:16]
+            })
+
+    notifs.sort(key=lambda x: x["time"] or "0", reverse=True)
+    badge = sum(1 for n in notifs if n["type"] in ("order_received", "chat_received"))
+    return jsonify({"notifications": notifs[:20], "total": badge})
+
+
 # ---------------- PROFILE ----------------
 @app.route("/profile")
 def profile():
@@ -656,12 +745,15 @@ def profile():
     listings = c.fetchall()
     c.execute("SELECT COUNT(*) as cnt FROM cart WHERE user=?", (session["user"],))
     cart_count = c.fetchone()["cnt"]
-    c.execute("SELECT COUNT(*) as cnt FROM wishlist WHERE user=?", (session["user"],))
-    wishlist_count = c.fetchone()["cnt"]
+    c.execute("SELECT COUNT(*) as cnt FROM reviews WHERE name=?", (session["user"],))
+    reviews_count = c.fetchone()["cnt"]
     conn.close()
     pending = get_pending_count(session.get("user"))
+    order_pending_count = get_order_pending_count(session.get("user"))
     return render_template("profile.html", user=user, listings=listings,
-                           cart_count=cart_count, wishlist_count=wishlist_count,
+                           cart_count=cart_count,
+                           reviews_count=reviews_count,
+                           order_pending_count=order_pending_count,
                            pending_count=pending)
 
 
@@ -678,6 +770,192 @@ def remove_listing(product_id):
     conn.close()
     flash("Listing removed.")
     return redirect(url_for("profile"))
+
+
+# ---------------- ORDER REQUEST: BUYER SENDS ----------------
+@app.route("/request_order/<int:product_id>", methods=["GET", "POST"])
+def request_order(product_id):
+    if not session.get("user"):
+        flash("Please log in first.")
+        return redirect(url_for("login"))
+
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT * FROM products WHERE id=?", (product_id,))
+    product = c.fetchone()
+
+    if not product:
+        conn.close()
+        flash("Product not found.")
+        return redirect(url_for("explore"))
+
+    buyer  = session["user"]
+    seller = product["seller"]
+
+    if buyer == seller:
+        conn.close()
+        flash("This is your own listing.")
+        return redirect(url_for("product_detail", product_id=product_id))
+
+    # Check if a non-declined order already exists
+    c.execute("""SELECT id FROM order_requests
+                 WHERE product_id=? AND buyer=? AND status != 'declined'""",
+              (product_id, buyer))
+    if c.fetchone():
+        conn.close()
+        flash("You already have an active order request for this item.")
+        return redirect(url_for("product_detail", product_id=product_id))
+
+    # Rent order — comes via POST with dates
+    rent_from = None
+    rent_to   = None
+    rent_days = None
+    if product["category"] == "rent":
+        if request.method != "POST":
+            conn.close()
+            return redirect(url_for("product_detail", product_id=product_id))
+        rent_from = request.form.get("rent_from", "").strip()
+        rent_to   = request.form.get("rent_to", "").strip()
+        if not rent_from or not rent_to or rent_to < rent_from:
+            conn.close()
+            flash("Please select valid rental dates.")
+            return redirect(url_for("product_detail", product_id=product_id))
+        from datetime import date
+        d1 = date.fromisoformat(rent_from)
+        d2 = date.fromisoformat(rent_to)
+        rent_days = (d2 - d1).days + 1
+
+    c.execute("""INSERT INTO order_requests
+                 (product_id, buyer, seller, status, rent_from, rent_to, rent_days)
+                 VALUES (?, ?, ?, 'pending', ?, ?, ?)""",
+              (product_id, buyer, seller, rent_from, rent_to, rent_days))
+    conn.commit()
+    conn.close()
+
+    flash("Order request sent! Waiting for the seller to confirm.")
+    return redirect(url_for("product_detail", product_id=product_id))
+
+
+# ---------------- RESPOND TO ORDER REQUEST (seller) ----------------
+@app.route("/respond_order/<int:order_id>/<action>")
+def respond_order(order_id, action):
+    if not session.get("user"):
+        return redirect(url_for("login"))
+    if action not in ("accepted", "declined"):
+        flash("Invalid action.")
+        return redirect(url_for("order_requests"))
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    c.execute("UPDATE order_requests SET status=? WHERE id=? AND seller=?",
+              (action, order_id, session["user"]))
+    conn.commit()
+    conn.close()
+    flash("Order confirmed!" if action == "accepted" else "Order request declined.")
+    return redirect(url_for("order_requests"))
+
+
+# ---------------- MY ORDERS (buyer view) ----------------
+@app.route("/my_orders")
+def my_orders():
+    if not session.get("user"):
+        flash("Please log in.")
+        return redirect(url_for("login"))
+
+    user        = session["user"]
+    filter_val  = request.args.get("filter", "all")
+
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    if filter_val == "all":
+        c.execute("""SELECT * FROM order_requests WHERE buyer=?
+                     ORDER BY created_at DESC""", (user,))
+    else:
+        c.execute("""SELECT * FROM order_requests WHERE buyer=? AND status=?
+                     ORDER BY created_at DESC""", (user, filter_val))
+    orders = [dict(r) for r in c.fetchall()]
+    conn.close()
+
+    products_map = enrich_with_products(orders)
+    pending      = get_pending_count(user)
+
+    return render_template("orders.html",
+                           orders=orders,
+                           products_map=products_map,
+                           current_user=user,
+                           filter=filter_val,
+                           pending_count=pending)
+
+
+# ---------------- ORDER REQUESTS (seller view) ----------------
+@app.route("/order_requests")
+def order_requests():
+    if not session.get("user"):
+        flash("Please log in.")
+        return redirect(url_for("login"))
+
+    user       = session["user"]
+    filter_val = request.args.get("filter", "all")
+
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    if filter_val == "all":
+        c.execute("""SELECT * FROM order_requests WHERE seller=?
+                     ORDER BY created_at DESC""", (user,))
+    else:
+        c.execute("""SELECT * FROM order_requests WHERE seller=? AND status=?
+                     ORDER BY created_at DESC""", (user, filter_val))
+    orders = [dict(r) for r in c.fetchall()]
+    conn.close()
+
+    products_map         = enrich_with_products(orders)
+    pending              = get_pending_count(user)
+    pending_count_orders = get_order_pending_count(user)
+
+    return render_template("order_requests.html",
+                           orders=orders,
+                           products_map=products_map,
+                           current_user=user,
+                           filter=filter_val,
+                           pending_count=pending,
+                           pending_count_orders=pending_count_orders,
+                           SUPABASE_URL=SUPABASE_URL,
+                           SUPABASE_KEY=SUPABASE_KEY)
+
+
+# ---------------- MY REVIEWS ----------------
+@app.route("/my_reviews")
+def my_reviews():
+    if not session.get("user"):
+        flash("Please log in.")
+        return redirect(url_for("login"))
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT * FROM reviews WHERE name=? ORDER BY id DESC", (session["user"],))
+    reviews = [dict(r) for r in c.fetchall()]
+    conn.close()
+    pending = get_pending_count(session.get("user"))
+    return render_template("my_reviews.html",
+                           reviews=reviews,
+                           current_user=session["user"],
+                           pending_count=pending)
+
+
+# ---------------- DELETE REVIEW ----------------
+@app.route("/delete_review/<int:review_id>")
+def delete_review(review_id):
+    if not session.get("user"):
+        return redirect(url_for("login"))
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    c.execute("DELETE FROM reviews WHERE id=? AND name=?", (review_id, session["user"]))
+    conn.commit()
+    conn.close()
+    flash("Review deleted.")
+    return redirect(url_for("my_reviews"))
 
 
 # ---------------- RUN ----------------

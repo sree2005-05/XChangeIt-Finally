@@ -40,15 +40,31 @@
       <a href="{{ url_for('cart') }}" class="nav-icon-btn" data-tooltip="Cart">
         <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
       </a>
-      <a href="{{ url_for('wishlist') }}" class="nav-icon-btn" data-tooltip="Wishlist">
-        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-      </a>
       <a href="{{ url_for('my_listings_chat') }}" class="nav-icon-btn" data-tooltip="Chats">
         <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         {% if pending_count and pending_count > 0 %}
           <span class="nav-badge">{{ pending_count }}</span>
         {% endif %}
       </a>
+      <!-- NOTIFICATION BELL -->
+      <div class="notif-wrap" id="notifWrap">
+        <button class="nav-icon-btn notif-bell-btn" id="notifBell" data-tooltip="Notifications" onclick="toggleNotifPanel(event)" aria-label="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 01-3.46 0"/>
+          </svg>
+          <span class="nav-badge notif-badge" id="notifBadge" style="display:none;"></span>
+        </button>
+        <div class="notif-panel" id="notifPanel" style="display:none;">
+          <div class="notif-panel-header">
+            <span>Notifications</span>
+            <button class="notif-close-btn" onclick="closeNotifPanel()">&#x2715;</button>
+          </div>
+          <div class="notif-list" id="notifList">
+            <div class="notif-loading">Loading&#8230;</div>
+          </div>
+        </div>
+      </div>
       <a href="{{ url_for('profile') }}" class="nav-icon-btn nav-profile-btn" data-tooltip="{{ session.get('user') }}">
         {{ session.get('user')[0]|upper }}
       </a>
@@ -79,11 +95,6 @@
           <span class="pstat-num">{{ cart_count }}</span>
           <span class="pstat-label">In Cart</span>
         </div>
-        <div class="pstat-sep"></div>
-        <div class="pstat">
-          <span class="pstat-num">{{ wishlist_count }}</span>
-          <span class="pstat-label">Wishlisted</span>
-        </div>
       </div>
     </div>
     <div class="profile-hero-actions">
@@ -102,26 +113,26 @@
       <span class="qlink-label">My Cart</span>
       <span class="qlink-count">{{ cart_count }}</span>
     </a>
-    <a href="{{ url_for('wishlist') }}" class="qlink-card">
+    <a href="{{ url_for('my_orders') }}" class="qlink-card">
       <span class="qlink-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
       </span>
-      <span class="qlink-label">Wishlist</span>
-      <span class="qlink-count">{{ wishlist_count }}</span>
-    </a>
-    <a href="{{ url_for('sell') }}" class="qlink-card">
-      <span class="qlink-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      </span>
-      <span class="qlink-label">Post Item</span>
+      <span class="qlink-label">My Orders</span>
       <span class="qlink-count">→</span>
     </a>
-    <a href="{{ url_for('add_review') }}" class="qlink-card">
+    <a href="{{ url_for('order_requests') }}" class="qlink-card">
+      <span class="qlink-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><polyline points="9 11 11 13 15 9"/></svg>
+      </span>
+      <span class="qlink-label">Order Requests</span>
+      <span class="qlink-count">{% if order_pending_count > 0 %}<span style="background:#e74c3c;color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;">{{ order_pending_count }}</span>{% else %}→{% endif %}</span>
+    </a>
+    <a href="{{ url_for('my_reviews') }}" class="qlink-card">
       <span class="qlink-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
       </span>
-      <span class="qlink-label">Add Review</span>
-      <span class="qlink-count">→</span>
+      <span class="qlink-label">My Reviews</span>
+      <span class="qlink-count">{{ reviews_count }}</span>
     </a>
   </div>
 </div>
@@ -194,7 +205,6 @@
       <h4>Account</h4>
       <ul>
         <li><a href="{{ url_for('cart') }}">My Cart</a></li>
-        <li><a href="{{ url_for('wishlist') }}">Wishlist</a></li>
         <li><a href="{{ url_for('logout') }}">Logout</a></li>
       </ul>
     </div>
@@ -221,5 +231,6 @@
     setInterval(refreshBadge, 8000);
   })();
 </script>
+  <script src="{{ url_for('static', filename='notifications.js') }}"></script>
 </body>
 </html>
