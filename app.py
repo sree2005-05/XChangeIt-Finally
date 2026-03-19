@@ -64,6 +64,17 @@ def init_db():
         conn.commit()
     except sqlite3.OperationalError:
         pass
+    # Stock availability columns
+    try:
+        c.execute("ALTER TABLE products ADD COLUMN status TEXT DEFAULT 'available'")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
+    try:
+        c.execute("ALTER TABLE products ADD COLUMN rented_until TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
     c.execute('''CREATE TABLE IF NOT EXISTS reviews (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL, message TEXT NOT NULL, year TEXT NOT NULL
@@ -171,12 +182,13 @@ def explore():
     category = request.args.get("category", "all")
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
+    base = """SELECT p.*, (SELECT o.rent_days FROM order_requests o WHERE o.product_id=p.id AND o.status='accepted' ORDER BY o.id DESC LIMIT 1) as rent_days_active FROM products p"""
     if category == "buy":
-        c.execute("SELECT * FROM products WHERE category='buy' ORDER BY id DESC")
+        c.execute(base + " WHERE p.category='buy' ORDER BY p.id DESC")
     elif category == "rent":
-        c.execute("SELECT * FROM products WHERE category='rent' ORDER BY id DESC")
+        c.execute(base + " WHERE p.category='rent' ORDER BY p.id DESC")
     else:
-        c.execute("SELECT * FROM products ORDER BY id DESC")
+        c.execute(base + " ORDER BY p.id DESC")
     products = c.fetchall()
     conn.close()
     pending = get_pending_count(session.get("user"))
@@ -215,10 +227,27 @@ def product_detail(product_id):
 
     from datetime import date
     pending = get_pending_count(session.get("user"))
+
+    # Get column names to safely extract status/rented_until/rent_days
+    conn3 = sqlite3.connect(DATABASE)
+    conn3.row_factory = sqlite3.Row
+    c3 = conn3.cursor()
+    c3.execute("SELECT status, rented_until FROM products WHERE id=?", (product_id,))
+    avail_row = c3.fetchone()
+    c3.execute("SELECT rent_days FROM order_requests WHERE product_id=? AND status='accepted' ORDER BY id DESC LIMIT 1", (product_id,))
+    rent_row = c3.fetchone()
+    conn3.close()
+    product_status  = avail_row["status"]       if avail_row and avail_row["status"]       else "available"
+    rented_until    = avail_row["rented_until"]  if avail_row and avail_row["rented_until"]  else None
+    rent_days       = rent_row["rent_days"]      if rent_row  and rent_row["rent_days"]      else None
+
     return render_template("product_detail.html", product=product,
                            chat_status=chat_status, order_status=order_status,
                            today=date.today().isoformat(),
                            pending_count=pending,
+                           product_status=product_status,
+                           rented_until=rented_until,
+                           rent_days=rent_days,
                            SUPABASE_URL=SUPABASE_URL, SUPABASE_KEY=SUPABASE_KEY)
 
 
@@ -846,9 +875,34 @@ def respond_order(order_id, action):
         flash("Invalid action.")
         return redirect(url_for("order_requests"))
     conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.execute("UPDATE order_requests SET status=? WHERE id=? AND seller=?",
               (action, order_id, session["user"]))
+
+    if action == "accepted":
+        # Fetch order details to update product availability
+        c.execute("SELECT * FROM order_requests WHERE id=?", (order_id,))
+        order = c.fetchone()
+        if order:
+            product_id = order["product_id"]
+            # Fetch product to check category
+            c.execute("SELECT category FROM products WHERE id=?", (product_id,))
+            prod = c.fetchone()
+            if prod:
+                if prod["category"] == "rent":
+                    # Mark as rented, store return date
+                    rented_until = order["rent_to"] or ""
+                    c.execute("UPDATE products SET status='rented', rented_until=? WHERE id=?",
+                              (rented_until, product_id))
+                else:
+                    # Mark as sold — archive it
+                    c.execute("UPDATE products SET status='sold' WHERE id=?", (product_id,))
+                # Decline all other pending orders for the same product
+                c.execute("""UPDATE order_requests SET status='declined'
+                             WHERE product_id=? AND id!=? AND status='pending'""",
+                          (product_id, order_id))
+
     conn.commit()
     conn.close()
     flash("Order confirmed!" if action == "accepted" else "Order request declined.")

@@ -118,6 +118,20 @@
           <div class="product-badge {% if product[5]=='rent' %}badge-rent{% else %}badge-buy{% endif %}">
             {{ product[5]|upper if product[5] else 'BUY' }}
           </div>
+          {% set prod_status = product[12] if product|length > 12 else 'available' %}
+          {% set rent_days_active = product[14] if product|length > 14 else None %}
+          {% if prod_status == 'sold' %}
+            <div class="product-status-overlay overlay-sold">
+              <span>SOLD</span>
+            </div>
+          {% elif prod_status == 'rented' %}
+            <div class="product-status-overlay overlay-rented">
+              <span>RENTED</span>
+              {% if rent_days_active %}
+                <span class="overlay-days">{{ rent_days_active }} day{% if rent_days_active != 1 %}s{% endif %}</span>
+              {% endif %}
+            </div>
+          {% endif %}
         </div>
         <div class="product-body">
           <h3>{{ product[1] }}</h3>
@@ -173,6 +187,27 @@
     </div>
   </div>
   <div class="footer-bottom">© 2026 XChang
+<style>
+.product-status-overlay {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; font-family: 'Raleway', sans-serif;
+  border-radius: inherit;
+}
+.overlay-sold {
+  background: rgba(231,76,60,0.78); color: #fff;
+}
+.overlay-rented {
+  background: rgba(243,156,18,0.82); color: #fff;
+}
+.product-status-overlay span:first-child {
+  font-size: 18px; font-weight: 800; letter-spacing: 3px;
+}
+.overlay-days {
+  font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 10px;
+}
+</style>
 <script>
   (function() {
     if (!document.querySelector('.nav-icon-btn[data-tooltip="Chats"]')) return;

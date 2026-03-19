@@ -122,12 +122,50 @@
 
       <div class="detail-divider"></div>
 
+      <!-- ── AVAILABILITY BANNER ── -->
+      {% if product_status == 'sold' %}
+        <div class="avail-banner avail-sold">
+          <span class="avail-icon">🔒</span>
+          <div>
+            <div class="avail-title">This item has been sold</div>
+            <div class="avail-sub">It is no longer available for purchase.</div>
+          </div>
+        </div>
+      {% elif product_status == 'rented' %}
+        <div class="avail-banner avail-rented">
+          <span class="avail-icon">📅</span>
+          <div>
+            <div class="avail-title">Currently Rented Out</div>
+            <div class="avail-sub">
+              {% if rent_days %}
+                Rented for <strong>{{ rent_days }} day{% if rent_days != 1 %}s{% endif %}</strong>
+                {% if rented_until %} — available after <strong>{{ rented_until }}</strong>{% endif %}.
+                Check back then to rent it next!
+              {% elif rented_until %}
+                Available after <strong>{{ rented_until }}</strong> — check back then to rent it next!
+              {% else %}
+                This item is currently on rent. Check back soon.
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endif %}
+
       <!-- ACTIONS -->
       <div class="detail-actions">
-        <a href="{{ url_for('add_to_cart', product_id=product[0]) }}" class="btn-red detail-btn">
-          Add to Cart
-        </a>
-        {% if session.get('user') %}
+        {% if product_status == 'available' %}
+          <a href="{{ url_for('add_to_cart', product_id=product[0]) }}" class="btn-red detail-btn">
+            Add to Cart
+          </a>
+        {% endif %}
+
+        {% if product_status == 'sold' %}
+          <button class="detail-btn btn-unavailable" disabled>🔒 Item Sold</button>
+        {% elif product_status == 'rented' %}
+          <button class="detail-btn btn-unavailable" disabled>
+            📅 Rented{% if rent_days %} {{ rent_days }} day{% if rent_days != 1 %}s{% endif %}{% endif %}{% if rented_until %} · until {{ rented_until }}{% endif %}
+          </button>
+        {% elif session.get('user') %}
           {% if session.get('user') != product[11] %}
 
             {# ── CHAT BUTTON ── #}
@@ -272,6 +310,35 @@
 
 <style>
 /* ── ORDER BUTTON STYLES ── */
+.btn-unavailable {
+  display: block; text-align: center;
+  padding: 15px 28px; font-size: 13px; border-radius: 3px;
+  font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  font-family: 'Raleway', sans-serif;
+  background: #ecf0f1; color: #95a5a6; border: 1.5px solid #dde2e8;
+  cursor: not-allowed; width: 100%;
+}
+/* ── AVAILABILITY BANNER ── */
+.avail-banner {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 16px 20px; border-radius: 5px; margin-bottom: 18px;
+  border: 1.5px solid;
+}
+.avail-sold {
+  background: rgba(231,76,60,0.07); border-color: rgba(231,76,60,0.3);
+}
+.avail-rented {
+  background: rgba(243,156,18,0.08); border-color: rgba(243,156,18,0.35);
+}
+.avail-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+.avail-title {
+  font-size: 14px; font-weight: 700;
+  color: #2c3e50; margin-bottom: 3px;
+}
+.avail-sold .avail-title { color: #c0392b; }
+.avail-rented .avail-title { color: #d68910; }
+.avail-sub { font-size: 13px; color: #7f8c8d; line-height: 1.5; }
+.avail-sub strong { color: #2c3e50; }
 .btn-order {
   display: block; text-align: center;
   padding: 15px 28px; font-size: 13px; border-radius: 3px;
