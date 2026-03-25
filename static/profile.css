@@ -100,6 +100,8 @@
   border-radius: 6px;
   transition: all 0.2s;
   cursor: pointer;
+  text-decoration: none;
+  color: inherit;
 }
 .qlink-card:hover {
   border-color: #2c3e50;
@@ -111,6 +113,14 @@
   display: flex;
   align-items: center;
   flex-shrink: 0;
+}
+.qlink-icon svg {
+  stroke: #e74c3c;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  display: block;
 }
 .qlink-label {
   flex: 1;
@@ -146,6 +156,7 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 20px;
+  align-items: start;
 }
 .profile-listing-card {
   background: #fff;
@@ -154,6 +165,7 @@
   overflow: hidden;
   cursor: pointer;
   transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
+  contain: layout;
 }
 .profile-listing-card:hover {
   box-shadow: 0 10px 28px rgba(44,62,80,0.12);
@@ -166,7 +178,7 @@
   background: #f4f6f9;
   overflow: hidden;
 }
-.plc-img img { width: 100%; height: 100%; object-fit: cover; }
+.plc-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .plc-img-placeholder {
   width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
@@ -211,16 +223,54 @@
 }
 .plc-delete {
   background: transparent;
-  border: 1px solid #e5eaef;
-  color: #bdc3c7;
-  padding: 5px 10px;
+  border: 1.5px solid rgba(231,76,60,0.3);
+  color: #e74c3c;
+  padding: 5px 12px;
   border-radius: 3px;
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
   cursor: pointer;
   transition: all 0.2s;
   font-family: 'Raleway', sans-serif;
+  text-transform: uppercase;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
 }
 .plc-delete:hover { background: #e74c3c; color: #fff; border-color: #e74c3c; }
+
+/* Trash icon button overlaid on image top-right */
+.plc-delete-overlay {
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 30px; height: 30px;
+  background: rgba(231,76,60,0.85);
+  color: #fff;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.15s;
+  z-index: 2;
+  flex-shrink: 0;
+  backdrop-filter: blur(2px);
+  text-decoration: none;
+}
+.plc-delete-overlay:hover { background: #c0392b; }
+.profile-listing-card:hover .plc-delete-overlay { opacity: 1; }
+
+.plc-delete-overlay svg {
+  stroke: #fff;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  display: block;
+  flex-shrink: 0;
+}
 
 /* ── EMPTY STATE ── */
 .profile-empty {
@@ -235,7 +285,10 @@
 .profile-empty p { color: #95a5a6; font-size: 14px; }
 
 /* ── RESPONSIVE ── */
-@media (max-width: 1000px) { .profile-grid { grid-template-columns: repeat(4, 1fr); } .profile-quicklinks-inner { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 1000px) {
+  .profile-grid { grid-template-columns: repeat(3, 1fr); }
+  .profile-quicklinks-inner { grid-template-columns: repeat(2, 1fr); }
+}
 @media (max-width: 768px) {
   .profile-hero, .profile-quicklinks, .profile-listings-section { padding-left: 20px; padding-right: 20px; }
   .profile-hero-inner { flex-direction: column; align-items: flex-start; gap: 20px; }

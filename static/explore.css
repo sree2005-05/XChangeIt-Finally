@@ -172,6 +172,57 @@
 }
 .empty-state p { color: #95a5a6; font-size: 15px; }
 
+/* ── RENT BLOCKED OVERLAY ── */
+.rent-blocked-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(44, 62, 80, 0.72);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  backdrop-filter: blur(2px);
+}
+.rent-blocked-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+.rent-blocked-text {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.rent-blocked-date {
+  font-size: 11px;
+  color: rgba(255,255,255,0.7);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* Dim the whole card when rented out */
+.product-card:has(.rent-blocked-overlay) {
+  opacity: 0.82;
+}
+.product-card:has(.rent-blocked-overlay):hover {
+  transform: none;
+  box-shadow: none;
+  border-color: #e5eaef;
+  cursor: default;
+}
+
+/* Unavailable button state */
+.rented-out-btn {
+  background: #f4f6f9 !important;
+  color: #bdc3c7 !important;
+  border-color: #e5eaef !important;
+  cursor: not-allowed !important;
+  pointer-events: none;
+  font-size: 11px !important;
+}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 1000px) { .products-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 768px) {

@@ -115,6 +115,16 @@
       <h1 class="detail-title">{{ product[1] }}</h1>
       <div class="detail-price">₹ {{ product[2] }}</div>
 
+      {% if active_rent %}
+      <div class="rent-status-banner">
+        <div class="rent-status-icon">🔒</div>
+        <div class="rent-status-body">
+          <div class="rent-status-title">Currently On Rent</div>
+          <div class="rent-status-sub">This item is rented out until <strong>{{ active_rent.rent_to }}</strong> — available again after that date.</div>
+        </div>
+      </div>
+      {% endif %}
+
       <div class="detail-divider"></div>
 
       <div class="detail-desc-label">Description</div>
@@ -144,7 +154,11 @@
             {% endif %}
 
             {# ── CONFIRM ORDER BUTTON ── #}
-            {% if order_status == None %}
+            {% if active_rent %}
+              <div class="rent-unavailable-btn">
+                🔒 Unavailable until {{ active_rent.rent_to }}
+              </div>
+            {% elif order_status == None %}
               {% if product[5] == 'rent' %}
                 <button class="detail-btn btn-order" onclick="openRentModal()">
                   🛒 Confirm Order

@@ -153,6 +153,47 @@ def enrich_with_products(req_list):
     return result
 
 
+# ── helper: get active rent info for a product (accepted order, rent_to >= today) ──
+def get_active_rent(product_id):
+    """Returns dict with rent_to date if item is currently rented out, else None."""
+    from datetime import date
+    today = date.today().isoformat()
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("""SELECT rent_to FROM order_requests
+                 WHERE product_id=? AND status='accepted'
+                 AND rent_to IS NOT NULL AND rent_to >= ?
+                 ORDER BY rent_to DESC LIMIT 1""",
+              (product_id, today))
+    row = c.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+# ── helper: get active rent info for multiple products at once ──
+def get_active_rents_bulk(product_ids):
+    """Returns {product_id: rent_to} for all currently rented products."""
+    if not product_ids:
+        return {}
+    from datetime import date
+    today = date.today().isoformat()
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    placeholders = ",".join("?" for _ in product_ids)
+    c.execute(f"""SELECT product_id, MAX(rent_to) as rent_to
+                  FROM order_requests
+                  WHERE product_id IN ({placeholders})
+                  AND status='accepted'
+                  AND rent_to IS NOT NULL AND rent_to >= ?
+                  GROUP BY product_id""",
+              list(product_ids) + [today])
+    result = {row["product_id"]: row["rent_to"] for row in c.fetchall()}
+    conn.close()
+    return result
+
+
 # ---------------- HOME ----------------
 @app.route("/")
 def home():
@@ -180,7 +221,11 @@ def explore():
     products = c.fetchall()
     conn.close()
     pending = get_pending_count(session.get("user"))
-    return render_template("explore.html", products=products, category=category, pending_count=pending)
+    # Build active rents map for rent-category products
+    rent_product_ids = [p[0] for p in products if p[5] == "rent"]
+    active_rents = get_active_rents_bulk(rent_product_ids)
+    return render_template("explore.html", products=products, category=category,
+                           pending_count=pending, active_rents=active_rents)
 
 
 # ---------------- PRODUCT DETAIL ----------------
@@ -215,10 +260,12 @@ def product_detail(product_id):
 
     from datetime import date
     pending = get_pending_count(session.get("user"))
+    active_rent = get_active_rent(product_id) if product[5] == "rent" else None
     return render_template("product_detail.html", product=product,
                            chat_status=chat_status, order_status=order_status,
                            today=date.today().isoformat(),
                            pending_count=pending,
+                           active_rent=active_rent,
                            SUPABASE_URL=SUPABASE_URL, SUPABASE_KEY=SUPABASE_KEY)
 
 
@@ -806,6 +853,19 @@ def request_order(product_id):
         conn.close()
         flash("You already have an active order request for this item.")
         return redirect(url_for("product_detail", product_id=product_id))
+
+    # Block if item is currently rented out by someone else
+    if product["category"] == "rent":
+        from datetime import date
+        today = date.today().isoformat()
+        c.execute("""SELECT id FROM order_requests
+                     WHERE product_id=? AND status='accepted'
+                     AND rent_to IS NOT NULL AND rent_to >= ?""",
+                  (product_id, today))
+        if c.fetchone():
+            conn.close()
+            flash("This item is currently rented out. Please check back after the return date.")
+            return redirect(url_for("product_detail", product_id=product_id))
 
     # Rent order — comes via POST with dates
     rent_from = None

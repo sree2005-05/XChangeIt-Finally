@@ -176,6 +176,59 @@
   font-weight: 700;
 }
 
+/* RENT STATUS BANNER */
+.rent-status-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 20px;
+  background: rgba(231, 76, 60, 0.06);
+  border: 1.5px solid rgba(231, 76, 60, 0.25);
+  border-left: 4px solid #e74c3c;
+  border-radius: 4px;
+  margin-bottom: 24px;
+}
+.rent-status-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.rent-status-body {}
+.rent-status-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #e74c3c;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.rent-status-sub {
+  font-size: 13px;
+  color: #555e6d;
+  line-height: 1.55;
+  font-weight: 500;
+}
+.rent-status-sub strong {
+  color: #2c3e50;
+  font-weight: 700;
+}
+
+/* RENT UNAVAILABLE BUTTON */
+.rent-unavailable-btn {
+  display: block;
+  text-align: center;
+  padding: 15px 28px;
+  font-size: 13px;
+  border-radius: 3px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-family: 'Raleway', sans-serif;
+  background: #f4f6f9;
+  color: #95a5a6;
+  border: 1.5px solid #e5eaef;
+  cursor: not-allowed;
+}
+
 /* RESPONSIVE */
 @media (max-width: 900px) {
   .detail-section { padding: 30px 20px 60px; }
