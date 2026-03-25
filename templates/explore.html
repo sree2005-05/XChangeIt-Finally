@@ -129,6 +129,12 @@
         <div class="product-body">
           <h3>{{ product[1] }}</h3>
           <p class="product-desc">{{ product[3] }}</p>
+          {% if product[11] %}
+          <div class="product-seller">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            {{ product[11] }}
+          </div>
+          {% endif %}
           <div class="product-footer">
             <span class="product-price">₹ {{ product[2] }}</span>
             {% if product[5] == 'rent' and active_rents.get(product[0]) %}
@@ -204,5 +210,17 @@
   })();
 </script>
   <script src="{{ url_for('static', filename='notifications.js') }}"></script>
+<style>
+.product-seller {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #95a5a6;
+  font-weight: 600;
+  margin-bottom: 8px;
+  letter-spacing: 0.2px;
+}
+</style>
 </body>
 </html>
