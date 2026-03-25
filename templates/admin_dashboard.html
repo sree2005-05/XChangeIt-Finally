@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — XChangeIt</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='slate.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="flash-wrap">
+      {% for msg in messages %}<div class="flash-msg">{{ msg }}</div>{% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- ADMIN NAVBAR -->
+<nav class="admin-nav">
+  <div class="admin-nav-left">
+    <span class="admin-logo">XChange<span>It</span> <span class="admin-badge">ADMIN</span></span>
+  </div>
+  <div class="admin-nav-links">
+    <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-link active">Dashboard</a>
+    <a href="{{ url_for('admin_users') }}" class="admin-nav-link">Users</a>
+    <a href="{{ url_for('admin_products') }}" class="admin-nav-link">Products</a>
+    <a href="{{ url_for('admin_orders') }}" class="admin-nav-link">Orders</a>
+    <a href="{{ url_for('admin_reviews') }}" class="admin-nav-link">Reviews</a>
+  </div>
+  <div class="admin-nav-right">
+    <span class="admin-user-label">{{ session.get('user') }}</span>
+    <a href="{{ url_for('logout') }}" class="admin-logout-btn">Logout</a>
+  </div>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="admin-header">
+  <div class="admin-header-inner">
+    <div>
+      <span class="admin-overline">Control Panel</span>
+      <h1 class="admin-title">Dashboard</h1>
+    </div>
+    <div class="admin-header-meta">Welcome back, admin.</div>
+  </div>
+</div>
+
+<!-- STAT CARDS -->
+<div class="admin-page">
+  <div class="admin-inner">
+
+    <div class="admin-stats-grid">
+      <a href="{{ url_for('admin_users') }}" class="admin-stat-card">
+        <div class="asc-icon asc-blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="26" height="26">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+          </svg>
+        </div>
+        <div class="asc-body">
+          <span class="asc-num">{{ user_count }}</span>
+          <span class="asc-label">Registered Users</span>
+        </div>
+        <span class="asc-arrow">›</span>
+      </a>
+
+      <a href="{{ url_for('admin_products') }}" class="admin-stat-card">
+        <div class="asc-icon asc-red">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="26" height="26">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>
+          </svg>
+        </div>
+        <div class="asc-body">
+          <span class="asc-num">{{ product_count }}</span>
+          <span class="asc-label">Active Listings</span>
+        </div>
+        <span class="asc-arrow">›</span>
+      </a>
+
+      <a href="{{ url_for('admin_orders') }}" class="admin-stat-card">
+        <div class="asc-icon asc-amber">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="26" height="26">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+            <rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/>
+          </svg>
+        </div>
+        <div class="asc-body">
+          <span class="asc-num">{{ pending_orders }}</span>
+          <span class="asc-label">Pending Orders</span>
+        </div>
+        <span class="asc-arrow">›</span>
+      </a>
+
+      <a href="{{ url_for('admin_reviews') }}" class="admin-stat-card">
+        <div class="asc-icon asc-green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="26" height="26">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+          </svg>
+        </div>
+        <div class="asc-body">
+          <span class="asc-num">{{ review_count }}</span>
+          <span class="asc-label">Reviews</span>
+        </div>
+        <span class="asc-arrow">›</span>
+      </a>
+
+      <div class="admin-stat-card no-link">
+        <div class="asc-icon asc-slate">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="26" height="26">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+          </svg>
+        </div>
+        <div class="asc-body">
+          <span class="asc-num">{{ chat_pending_count }}</span>
+          <span class="asc-label">Pending Chat Requests</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="admin-section-title">Quick Actions</div>
+    <div class="admin-actions-grid">
+      <a href="{{ url_for('admin_products') }}" class="admin-action-card">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        Remove Invalid Listings
+      </a>
+      <a href="{{ url_for('admin_users') }}" class="admin-action-card">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        Manage Users
+      </a>
+      <a href="{{ url_for('admin_orders') }}" class="admin-action-card">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><polyline points="9 11 11 13 15 9"/></svg>
+        View All Orders
+      </a>
+      <a href="{{ url_for('admin_reviews') }}" class="admin-action-card">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Moderate Reviews
+      </a>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

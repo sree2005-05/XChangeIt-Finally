@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orders — XChangeIt Admin</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='slate.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+</head>
+<body>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="flash-wrap">
+      {% for msg in messages %}<div class="flash-msg">{{ msg }}</div>{% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<nav class="admin-nav">
+  <div class="admin-nav-left">
+    <span class="admin-logo">XChange<span>It</span> <span class="admin-badge">ADMIN</span></span>
+  </div>
+  <div class="admin-nav-links">
+    <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-link">Dashboard</a>
+    <a href="{{ url_for('admin_users') }}" class="admin-nav-link">Users</a>
+    <a href="{{ url_for('admin_products') }}" class="admin-nav-link">Products</a>
+    <a href="{{ url_for('admin_orders') }}" class="admin-nav-link active">Orders</a>
+    <a href="{{ url_for('admin_reviews') }}" class="admin-nav-link">Reviews</a>
+  </div>
+  <div class="admin-nav-right">
+    <span class="admin-user-label">{{ session.get('user') }}</span>
+    <a href="{{ url_for('logout') }}" class="admin-logout-btn">Logout</a>
+  </div>
+</nav>
+
+<div class="admin-header">
+  <div class="admin-header-inner">
+    <div>
+      <span class="admin-overline">Control Panel</span>
+      <h1 class="admin-title">All Orders</h1>
+    </div>
+    <div class="admin-header-meta">{{ orders|length }} total orders</div>
+  </div>
+</div>
+
+<div class="admin-page">
+  <div class="admin-inner">
+
+    <div class="admin-toolbar">
+      <div class="admin-searchbar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="orderSearch" placeholder="Search buyer, seller, product…" oninput="filterRows('orderSearch','orderTable')">
+      </div>
+      <div class="admin-filter-tabs">
+        <button class="afilter active" onclick="filterStatus(this,'all')">All</button>
+        <button class="afilter" onclick="filterStatus(this,'pending')">Pending</button>
+        <button class="afilter" onclick="filterStatus(this,'accepted')">Confirmed</button>
+        <button class="afilter" onclick="filterStatus(this,'declined')">Declined</button>
+      </div>
+    </div>
+
+    <div class="admin-table-wrap">
+      <table class="admin-table" id="orderTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Product</th>
+            <th>Buyer</th>
+            <th>Seller</th>
+            <th>Type</th>
+            <th>Rent Period</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in orders %}
+          {% set p = products_map.get(o.product_id, {}) %}
+          <tr data-status="{{ o.status }}">
+            <td class="td-id">#{{ o.id }}</td>
+            <td>
+              <div class="order-product-cell">
+                <span class="opc-name">{{ p.get('name', '—') }}</span>
+                <span class="opc-price">₹ {{ p.get('price', '') }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="user-cell">
+                <div class="user-avatar-sm buyer-av">{{ o.buyer[0]|upper }}</div>
+                {{ o.buyer }}
+              </div>
+            </td>
+            <td>
+              <div class="user-cell">
+                <div class="user-avatar-sm seller-av">{{ o.seller[0]|upper }}</div>
+                {{ o.seller }}
+              </div>
+            </td>
+            <td>
+              <span class="admin-pill {% if p.get('category') == 'rent' %}pill-rent{% else %}pill-buy{% endif %}">
+                {{ (p.get('category') or 'buy')|upper }}
+              </span>
+            </td>
+            <td class="td-dates">
+              {% if o.rent_from %}
+                {{ o.rent_from }} → {{ o.rent_to }}
+                <span class="rent-days-badge">{{ o.rent_days }}d</span>
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              <span class="status-chip status-{{ o.status }}">
+                <span class="status-dot"></span>
+                {{ o.status|capitalize }}
+              </span>
+            </td>
+            <td class="td-date">{{ (o.created_at or '')[:10] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if not orders %}
+    <div class="admin-empty"><span style="font-size:56px;opacity:0.2;">📋</span><p>No orders yet.</p></div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+function filterRows(inputId, tableId) {
+  const q = document.getElementById(inputId).value.toLowerCase();
+  document.querySelectorAll(`#${tableId} tbody tr`).forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+function filterStatus(btn, status) {
+  document.querySelectorAll('.afilter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('#orderTable tbody tr').forEach(row => {
+    row.style.display = (status === 'all' || row.dataset.status === status) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>

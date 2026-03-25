@@ -19,6 +19,28 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
+# ---------------- ADMIN CONFIG ----------------
+ADMIN_EMAILS = {
+    "krishnendhus436@gmail.com",
+    "tpajisha@gmail.com",
+    "ashna6966@gmail.com",
+    "sreelakshmijayasekaran@gmail.com",
+}
+ADMIN_PASSWORD = "admin@123"
+
+def is_admin():
+    return session.get("is_admin", False)
+
+def require_admin(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get("user") or not session.get("is_admin"):
+            flash("Admin access required.")
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated
+
 # ---------------- SUPABASE CONFIG ----------------
 SUPABASE_URL = "https://mllhwywquaoyaoriktys.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sbGh3eXdxdWFveWFvcmlrdHlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5ODgzMzYsImV4cCI6MjA4NjU2NDMzNn0.2IhysGT2hkq8n5OZnazP1kwEc_9JPI6G5xmyHc3wZSo"
@@ -281,6 +303,9 @@ def signup():
         if not email.endswith("@gecskp.ac.in"):
             flash("Please use your official @gecskp.ac.in email address.")
             return render_template("signup.html")
+        if email in ADMIN_EMAILS:
+            flash("This email is reserved. Please use your college email.")
+            return render_template("signup.html")
         if len(password) < 8:
             flash("Password must be at least 8 characters.")
             return render_template("signup.html")
@@ -304,17 +329,37 @@ def signup():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if session.get("user"):
+        if session.get("is_admin"):
+            return redirect(url_for("admin_dashboard"))
         return redirect(url_for("home"))
     if request.method == "POST":
         email    = request.form["email"].strip().lower()
         password = request.form["password"]
+
+        # ── Admin login ──
+        if email in ADMIN_EMAILS:
+            if password == ADMIN_PASSWORD:
+                session["user"]     = email
+                session["is_admin"] = True
+                flash(f"Welcome, Admin!")
+                return redirect(url_for("admin_dashboard"))
+            else:
+                flash("Invalid admin password.")
+                return render_template("login.html")
+
+        # ── Regular user: must be college email ──
+        if not email.endswith("@gecskp.ac.in"):
+            flash("Please use your official @gecskp.ac.in email address.")
+            return render_template("login.html")
+
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
         c.execute("SELECT * FROM users WHERE email=?", (email,))
         user = c.fetchone()
         conn.close()
         if user and check_password_hash(user[3], password):
-            session["user"] = user[1]
+            session["user"]     = user[1]
+            session["is_admin"] = False
             flash(f"Welcome back, {user[1]}!")
             return redirect(url_for("home"))
         else:
@@ -1016,6 +1061,134 @@ def delete_review(review_id):
     conn.close()
     flash("Review deleted.")
     return redirect(url_for("my_reviews"))
+
+
+# ---------------- ADMIN DASHBOARD ----------------
+@app.route("/admin")
+@require_admin
+def admin_dashboard():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) as cnt FROM users")
+    user_count = c.fetchone()["cnt"]
+    c.execute("SELECT COUNT(*) as cnt FROM products")
+    product_count = c.fetchone()["cnt"]
+    c.execute("SELECT COUNT(*) as cnt FROM order_requests WHERE status='pending'")
+    pending_orders = c.fetchone()["cnt"]
+    c.execute("SELECT COUNT(*) as cnt FROM reviews")
+    review_count = c.fetchone()["cnt"]
+    conn.close()
+    chat_pending = sb_get("chat_requests", "status=eq.pending&select=id")
+    chat_pending_count = len(chat_pending) if isinstance(chat_pending, list) else 0
+    return render_template("admin_dashboard.html",
+                           user_count=user_count,
+                           product_count=product_count,
+                           pending_orders=pending_orders,
+                           review_count=review_count,
+                           chat_pending_count=chat_pending_count)
+
+
+@app.route("/admin/users")
+@require_admin
+def admin_users():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT id, name, email FROM users ORDER BY id DESC")
+    users = [dict(u) for u in c.fetchall()]
+    for u in users:
+        c.execute("SELECT COUNT(*) as cnt FROM products WHERE seller=?", (u["name"],))
+        u["listing_count"] = c.fetchone()["cnt"]
+        c.execute("SELECT COUNT(*) as cnt FROM order_requests WHERE buyer=?", (u["name"],))
+        u["order_count"] = c.fetchone()["cnt"]
+        c.execute("SELECT COUNT(*) as cnt FROM cart WHERE user=?", (u["name"],))
+        u["cart_count"] = c.fetchone()["cnt"]
+    conn.close()
+    return render_template("admin_users.html", users=users)
+
+
+@app.route("/admin/products")
+@require_admin
+def admin_products():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT * FROM products ORDER BY id DESC")
+    products = [dict(p) for p in c.fetchall()]
+    conn.close()
+    return render_template("admin_products.html", products=products)
+
+
+@app.route("/admin/remove_product/<int:product_id>")
+@require_admin
+def admin_remove_product(product_id):
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    c.execute("DELETE FROM products WHERE id=?", (product_id,))
+    c.execute("DELETE FROM cart WHERE product_id=?", (product_id,))
+    conn.commit()
+    conn.close()
+    flash("Product removed successfully.")
+    return redirect(url_for("admin_products"))
+
+
+@app.route("/admin/delete_user/<int:user_id>")
+@require_admin
+def admin_delete_user(user_id):
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT name FROM users WHERE id=?", (user_id,))
+    user = c.fetchone()
+    if user:
+        uname = user["name"]
+        c.execute("DELETE FROM products WHERE seller=?", (uname,))
+        c.execute("DELETE FROM cart WHERE user=?", (uname,))
+        c.execute("DELETE FROM reviews WHERE name=?", (uname,))
+        c.execute("DELETE FROM order_requests WHERE buyer=? OR seller=?", (uname, uname))
+        c.execute("DELETE FROM users WHERE id=?", (user_id,))
+        conn.commit()
+        flash(f"User '{uname}' and all their data removed.")
+    conn.close()
+    return redirect(url_for("admin_users"))
+
+
+@app.route("/admin/orders")
+@require_admin
+def admin_orders():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT * FROM order_requests ORDER BY created_at DESC")
+    orders = [dict(r) for r in c.fetchall()]
+    conn.close()
+    products_map = enrich_with_products(orders)
+    return render_template("admin_orders.html", orders=orders, products_map=products_map)
+
+
+@app.route("/admin/reviews")
+@require_admin
+def admin_reviews():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT * FROM reviews ORDER BY id DESC")
+    reviews = [dict(r) for r in c.fetchall()]
+    conn.close()
+    return render_template("admin_reviews.html", reviews=reviews)
+
+
+@app.route("/admin/delete_review/<int:review_id>")
+@require_admin
+def admin_delete_review(review_id):
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    c.execute("DELETE FROM reviews WHERE id=?", (review_id,))
+    conn.commit()
+    conn.close()
+    flash("Review deleted.")
+    return redirect(url_for("admin_reviews"))
 
 
 # ---------------- RUN ----------------
