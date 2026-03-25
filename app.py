@@ -835,7 +835,9 @@ def profile():
     user = c.fetchone()
     c.execute("SELECT * FROM products WHERE seller=? ORDER BY id DESC", (session["user"],))
     listings = c.fetchall()
-    c.execute("SELECT COUNT(*) as cnt FROM cart WHERE user=?", (session["user"],))
+    c.execute("""SELECT COUNT(*) as cnt FROM cart
+                 JOIN products ON cart.product_id = products.id
+                 WHERE cart.user=?""", (session["user"],))
     cart_count = c.fetchone()["cnt"]
     c.execute("SELECT COUNT(*) as cnt FROM reviews WHERE name=?", (session["user"],))
     reviews_count = c.fetchone()["cnt"]
@@ -858,6 +860,8 @@ def remove_listing(product_id):
     c = conn.cursor()
     c.execute("DELETE FROM products WHERE id=? AND seller=?",
               (product_id, session["user"]))
+    c.execute("DELETE FROM cart WHERE product_id=?", (product_id,))
+    c.execute("DELETE FROM order_requests WHERE product_id=?", (product_id,))
     conn.commit()
     conn.close()
     flash("Listing removed.")
