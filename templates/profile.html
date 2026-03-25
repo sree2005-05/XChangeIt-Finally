@@ -181,11 +181,6 @@
           <p>{{ item['short_desc'] }}</p>
           <div class="plc-footer">
             <span class="plc-price">₹ {{ item['price'] }}</span>
-            <a href="{{ url_for('remove_listing', product_id=item['id']) }}"
-               class="plc-delete"
-               onclick="event.stopPropagation(); return confirm('Remove this item from your listings?');">
-              Remove
-            </a>
           </div>
         </div>
       </div>
