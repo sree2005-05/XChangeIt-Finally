@@ -124,6 +124,12 @@
             <span class="rent-blocked-text">On Rent</span>
             <span class="rent-blocked-date">Back {{ active_rents[product[0]] }}</span>
           </div>
+          {% elif product[5] == 'buy' and product[0] in sold_products %}
+          <div class="sold-overlay">
+            <span class="sold-overlay-icon">✓</span>
+            <span class="sold-overlay-text">Sold</span>
+            <span class="sold-overlay-sub">No longer available</span>
+          </div>
           {% endif %}
         </div>
         <div class="product-body">
@@ -139,6 +145,8 @@
             <span class="product-price">₹ {{ product[2] }}</span>
             {% if product[5] == 'rent' and active_rents.get(product[0]) %}
               <span class="wishlist-btn rented-out-btn" title="Currently rented out">Unavailable</span>
+            {% elif product[5] == 'buy' and product[0] in sold_products %}
+              <span class="wishlist-btn sold-out-btn" title="This item has been sold">Sold Out</span>
             {% else %}
               <a href="{{ url_for('add_to_cart', product_id=product[0]) }}"
                  class="wishlist-btn"

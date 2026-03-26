@@ -216,6 +216,25 @@ def get_active_rents_bulk(product_ids):
     return result
 
 
+# ── helper: get sold status for multiple buy-products at once ──
+def get_sold_bulk(product_ids):
+    """Returns set of product_ids that have an accepted buy order (i.e. sold)."""
+    if not product_ids:
+        return set()
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    placeholders = ",".join("?" for _ in product_ids)
+    c.execute(f"""SELECT DISTINCT product_id
+                  FROM order_requests
+                  WHERE product_id IN ({placeholders})
+                  AND status='accepted'""",
+              list(product_ids))
+    result = {row["product_id"] for row in c.fetchall()}
+    conn.close()
+    return result
+
+
 # ---------------- HOME ----------------
 @app.route("/")
 def home():
@@ -246,8 +265,12 @@ def explore():
     # Build active rents map for rent-category products
     rent_product_ids = [p[0] for p in products if p[5] == "rent"]
     active_rents = get_active_rents_bulk(rent_product_ids)
+    # Build sold set for buy-category products
+    buy_product_ids = [p[0] for p in products if p[5] == "buy"]
+    sold_products = get_sold_bulk(buy_product_ids)
     return render_template("explore.html", products=products, category=category,
-                           pending_count=pending, active_rents=active_rents)
+                           pending_count=pending, active_rents=active_rents,
+                           sold_products=sold_products)
 
 
 # ---------------- PRODUCT DETAIL ----------------
